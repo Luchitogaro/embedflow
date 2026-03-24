@@ -6,7 +6,7 @@ import { LayoutDashboard, FileText, Settings, CreditCard, Zap } from "lucide-rea
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/documents", label: "Documents", icon: FileText },
   { href: "/settings/billing", label: "Billing", icon: CreditCard },
   { href: "/settings", label: "Settings", icon: Settings },
@@ -18,7 +18,7 @@ export function Sidebar() {
   return (
     <aside className="w-64 h-screen bg-[#0A1628] text-white flex flex-col fixed left-0 top-0">
       <div className="p-6">
-        <Link href="/" className="flex items-center gap-2.5">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
           <div className="p-1.5 bg-blue-500 rounded-lg">
             <Zap className="w-5 h-5 text-white" />
           </div>
@@ -29,8 +29,7 @@ export function Sidebar() {
       <nav className="flex-1 px-3">
         {navItems.map((item) => {
           const Icon = item.icon
-          const isActive = pathname === item.href || 
-            (item.href !== "/" && pathname.startsWith(item.href))
+          const isActive = pathname === item.href || pathname.startsWith(item.href)
           return (
             <Link
               key={item.href}

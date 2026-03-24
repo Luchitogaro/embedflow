@@ -14,11 +14,11 @@ export async function createClient() {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
+            for (const { name, value, options } of cookiesToSet) {
               cookieStore.set(name, value, options)
-            )
+            }
           } catch {
-            // Server Component — cookie set ignored
+            // Server Component — ignore
           }
         },
       },

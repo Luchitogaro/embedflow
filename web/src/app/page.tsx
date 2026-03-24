@@ -1,4 +1,6 @@
 import Link from "next/link"
+import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
 import { Upload, Shield, Mic, Zap, ArrowRight, Check, FileText, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -54,7 +56,15 @@ const faqs = [
   { q: "Can I integrate with Salesforce or HubSpot?", a: "Yes — Pro and Team plans include full CRM sync with both Salesforce and HubSpot." },
 ]
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // If logged in, show the dashboard instead
+  if (user) {
+    redirect("/dashboard")
+  }
+
   return (
     <div className="min-h-screen bg-white">
       {/* Nav */}
@@ -89,46 +99,21 @@ export default function LandingPage() {
             <span className="text-blue-400">Start understanding deals.</span>
           </h1>
           <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Embedflow uses AI to extract key terms, flag risk, and generate a 10-second pitch — in under 60 seconds. Built for sales teams who can't afford to miss the fine print.
+            Embedflow uses AI to extract key terms, flag risk, and generate a 10-second pitch — in under 60 seconds. Built for sales teams who can&apos;t afford to miss the fine print.
           </p>
           <div className="flex items-center justify-center gap-4">
-          <Link href="/login">
-            <Button size="lg" className="bg-blue-500 hover:bg-blue-600 text-white px-8 h-12">
-              Start free — no credit card
-            </Button>
-          </Link>
-          <Link href="#how-it-works">
-            <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 h-12">
-              See how it works
-            </Button>
-          </Link>
+            <Link href="/login">
+              <Button size="lg" className="bg-blue-500 hover:bg-blue-600 text-white px-8 h-12">
+                Start free — no credit card
+              </Button>
+            </Link>
+            <Link href="#how-it-works">
+              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 h-12">
+                See how it works
+              </Button>
+            </Link>
           </div>
           <p className="text-sm text-slate-400 mt-4">3 docs free per month · No credit card required</p>
-        </div>
-
-        {/* Floating UI preview */}
-        <div className="absolute right-8 top-16 hidden lg:block">
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 w-72 shadow-2xl">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-1 bg-green-500/20 rounded">
-                <FileText className="w-4 h-4 text-green-400" />
-              </div>
-              <span className="text-sm font-medium text-white">Acme_MSA_2024.pdf</span>
-            </div>
-            <div className="space-y-2">
-              <div className="h-2 bg-white/10 rounded-full w-full" />
-              <div className="h-2 bg-white/10 rounded-full w-5/6" />
-              <div className="h-2 bg-white/10 rounded-full w-4/6" />
-            </div>
-            <div className="mt-3 flex gap-2">
-              <div className="h-6 px-2 bg-red-500/20 border border-red-500/30 rounded-full text-xs text-red-300 flex items-center">
-                1 HIGH risk
-              </div>
-              <div className="h-6 px-2 bg-yellow-500/20 border border-yellow-500/30 rounded-full text-xs text-yellow-300 flex items-center">
-                1 MEDIUM risk
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -197,7 +182,7 @@ export default function LandingPage() {
         <div className="grid grid-cols-3 gap-6 stagger-children">
           {testimonials.map((t) => (
             <div key={t.name} className="p-6 rounded-2xl border border-slate-100 bg-white card-hover">
-              <p className="text-slate-700 text-sm leading-relaxed mb-4">"{t.quote}"</p>
+              <p className="text-slate-700 text-sm leading-relaxed mb-4">&quot;{t.quote}&quot;</p>
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                   {t.name[0]}
