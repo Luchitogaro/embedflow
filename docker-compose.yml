@@ -1,0 +1,24 @@
+# docker-compose.yml — Local development stack
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+  # Supabase local (optional — requires Supabase CLI)
+  # supabase:
+  #   image: supabase/supabase:latest
+  #   ports:
+  #     - "54321:54321"
+  #   environment:
+  #     - POSTGRES_PASSWORD=postgres
+  #     - ANON_KEY=your-anon-key
+  #     - SERVICE_ROLE_KEY=your-service-key
+
+volumes:
+  redis_data:
