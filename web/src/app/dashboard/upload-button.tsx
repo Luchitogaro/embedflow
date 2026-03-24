@@ -24,7 +24,7 @@ export function UploadButton() {
       setDone(true)
       setTimeout(() => {
         setDone(false)
-        router.push(`/documents/${result.documentId}`)
+        router.push(`/dashboard/documents/${result.documentId}`)
       }, 1200)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed")
