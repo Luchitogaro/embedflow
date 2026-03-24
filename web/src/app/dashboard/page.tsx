@@ -94,7 +94,7 @@ export default async function DashboardPage() {
       {/* Recent Documents */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-slate-900">Recent Analyses</h2>
-        <Link href="/documents">
+        <Link href="/dashboard/documents">
           <button className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900 font-medium transition-colors">
             View all <ArrowRight className="w-4 h-4" />
           </button>
@@ -115,7 +115,7 @@ export default async function DashboardPage() {
             {recentDocs.map((doc) => (
               <Link
                 key={doc.id}
-                href={`/documents/${doc.id}`}
+                href={`/dashboard/documents/${doc.id}`}
                 className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors"
               >
                 <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">

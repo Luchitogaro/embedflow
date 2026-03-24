@@ -105,7 +105,7 @@ export default async function DocumentsPage() {
                       <span className="text-sm text-slate-500">{formatDate(doc.created_at)}</span>
                     </TableCell>
                     <TableCell>
-                      <Link href={`/documents/${doc.id}`}>
+                      <Link href={`/dashboard/documents/${doc.id}`}>
                         <button className="p-1.5 rounded hover:bg-slate-100 transition-colors">
                           <Eye className="w-4 h-4 text-slate-400" />
                         </button>
