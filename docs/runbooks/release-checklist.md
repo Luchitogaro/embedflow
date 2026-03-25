@@ -8,6 +8,7 @@ Use before tagging a production deploy. Adjust for your hosting (Vercel, Fly, et
 - [ ] Optional: authenticated Playwright suite passes with `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` against staging.
 - [ ] Supabase migrations applied in order on production (or verified already applied).
 - [ ] Environment variables set and reviewed for production: Supabase, Stripe, worker `WORKER_SHARED_SECRET`, Resend, `APP_URL`, etc.
+- [ ] Worker OpenAI tuning matches org limits: `OPENAI_CHUNK_MAP_CONCURRENCY`, TPM vs `OPENAI_CHUNK_HARD_MAX`, and `OPENAI_MAX_EXTRACTED_CHARS` (`auto` or explicit).
 - [ ] Stripe webhook endpoint URL and signing secret match production app URL.
 - [ ] Worker image/build matches web expectations (API contract, env).
 

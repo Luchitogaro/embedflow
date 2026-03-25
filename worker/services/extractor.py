@@ -9,6 +9,7 @@ import asyncio
 import logging
 from json import JSONDecodeError
 from openai import OpenAI, APIError, APIConnectionError, APITimeoutError, RateLimitError
+from services.chunked_pipeline import run_chunked_extraction
 from services.pdf_parser import extract_text_from_url
 from services.document_text_safety import sanitize_extracted_text
 from services.db import update_analysis
@@ -45,6 +46,25 @@ OPENAI_CHUNK_MAP_CONCURRENCY = max(
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
 OPENAI_MODEL_CHUNK = os.getenv("OPENAI_MODEL_CHUNK", "gpt-4o-mini")
 OPENAI_MODEL_MERGE = os.getenv("OPENAI_MODEL_MERGE", "gpt-4o")
+
+
+def _parse_openai_max_extracted_chars() -> int:
+    """Bound pathological PDF text before chunking; auto = same cover as chunked map cap."""
+    from services.chunked_pipeline import max_chars_under_chunk_cap
+
+    raw = os.getenv("OPENAI_MAX_EXTRACTED_CHARS", "auto").strip().lower()
+    if raw in ("", "auto"):
+        return max_chars_under_chunk_cap(
+            OPENAI_CHUNK_HARD_MAX,
+            OPENAI_CHUNK_MAX_COUNT,
+            OPENAI_CHUNK_OVERLAP,
+        )
+    if raw in ("0", "off", "none"):
+        return 0
+    return max(OPENAI_EXTRACTION_CHUNK_THRESHOLD, int(raw))
+
+
+OPENAI_MAX_EXTRACTED_CHARS = _parse_openai_max_extracted_chars()
 
 
 _RETRY_AFTER_HINT_RE = re.compile(r"try again in ([\d.]+)\s*s", re.IGNORECASE)
@@ -146,6 +166,17 @@ async def run_analysis(
             "or upload DOCX/TXT instead."
         )
 
+    if OPENAI_MAX_EXTRACTED_CHARS > 0 and len(text) > OPENAI_MAX_EXTRACTED_CHARS:
+        prev = len(text)
+        text = text[: OPENAI_MAX_EXTRACTED_CHARS]
+        logger.warning(
+            "[%s] Extracted text truncated from %s to %s chars (OPENAI_MAX_EXTRACTED_CHARS). "
+            "Tail is omitted; often indicates PDF extraction noise or an extreme-length contract.",
+            document_id,
+            prev,
+            OPENAI_MAX_EXTRACTED_CHARS,
+        )
+
     raw_len = len(text)
     logger.info("[%s] Contract text length: %s chars", document_id, raw_len)
 
@@ -155,11 +186,10 @@ async def run_analysis(
         build_pitch_prompt,
         build_pitch_system,
     )
-    from services.chunked_pipeline import run_chunked_extraction
 
     if raw_len > OPENAI_EXTRACTION_CHUNK_THRESHOLD:
         logger.info(
-            "[%s] Chunked extraction (threshold=%s, chunk=%s, overlap=%s, max_chunks=%s, hard_max=%s, map_concurrency=%s, chunk_model=%s, merge_model=%s)",
+            "[%s] Chunked extraction (threshold=%s, chunk=%s, overlap=%s, max_chunks=%s, hard_max=%s, map_concurrency=%s, max_extracted_cap=%s, chunk_model=%s, merge_model=%s)",
             document_id,
             OPENAI_EXTRACTION_CHUNK_THRESHOLD,
             OPENAI_CHUNK_CHAR_SIZE,
@@ -167,6 +197,7 @@ async def run_analysis(
             OPENAI_CHUNK_MAX_COUNT,
             OPENAI_CHUNK_HARD_MAX,
             OPENAI_CHUNK_MAP_CONCURRENCY,
+            OPENAI_MAX_EXTRACTED_CHARS,
             OPENAI_MODEL_CHUNK,
             OPENAI_MODEL_MERGE,
         )

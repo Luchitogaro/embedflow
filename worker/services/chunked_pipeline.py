@@ -19,6 +19,21 @@ from prompts.chunked_extraction import (
 logger = logging.getLogger(__name__)
 
 
+def max_chars_under_chunk_cap(
+    hard_max_chunk: int, max_chunks: int, overlap: int
+) -> int:
+    """
+    Maximum characters the chunked map phase can cover without tail truncation,
+    when windows are widened to hard_max_chunk (same formula as split_text_into_chunks).
+    """
+    max_chunks = max(2, max_chunks)
+    hard_max_chunk = max(8_000, hard_max_chunk)
+    overlap = max(0, overlap)
+    o = max(0, min(overlap, hard_max_chunk // 2))
+    step = max(1, hard_max_chunk - o)
+    return hard_max_chunk + (max_chunks - 1) * step
+
+
 def _split_text_core(text: str, chunk_size: int, overlap: int) -> list[str]:
     """Fixed window split; overlap capped to chunk_size // 2."""
     n = len(text)
@@ -79,9 +94,7 @@ def split_text_into_chunks(
     if count_for(chunk_size) <= max_chunks:
         final_c = chunk_size
     elif count_for(hard_max_chunk) > max_chunks:
-        o = max(0, min(overlap, hard_max_chunk // 2))
-        step = max(1, hard_max_chunk - o)
-        max_len = hard_max_chunk + (max_chunks - 1) * step
+        max_len = max_chars_under_chunk_cap(hard_max_chunk, max_chunks, overlap)
         logger.warning(
             "[%s] Contract text is %s chars; truncating to %s chars so chunked extraction "
             "stays within OPENAI_CHUNK_MAX_COUNT=%s (hard_max_chunk=%s). Consider OCR noise or "

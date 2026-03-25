@@ -39,7 +39,7 @@ Status values:
 | 4 | Share-link compliance controls | P0/P1 | done | 1 day | `339c038` | Migration 008 applied and verified: create/revoke works; expired links blocked by shared loader |
 | 5 | Billing/usage auditability | P1 | done | 1 day | `224d0c2` | Migration 009 applied and checks passed; upload paths use deduplicated attributable RPC (fallback-safe) |
 | 6 | Security + a11y + E2E quality gate | P1 | done | 2 days | `f2bc274` `ebde961` | CI gate as in `f2bc274`; `ebde961` fixes billing SSR (`planCheckoutState`), auth/documents E2E, next-themes dev overlay noise, optional authenticated suite stability |
-| 7 | Go-live operations and runbooks | P0 | in_progress | 1 day | - | Runbooks: `docs/runbooks/release-checklist.md`, `docs/runbooks/incident-response.md` |
+| 7 | Go-live operations and runbooks | P0 | in_progress | 1 day | (pending) | Runbooks: `docs/runbooks/release-checklist.md`, `docs/runbooks/incident-response.md`; worker OpenAI bounds documented (`OPENAI_MAX_EXTRACTED_CHARS`, chunk caps, README) |
 
 ---
 
@@ -223,3 +223,4 @@ Wire concrete alerts to your hosting/observability provider (not committed here)
 - 2026-03-25: Phase 6 closed (`f2bc274`). Added auth-gate E2E (no session), optional authenticated Playwright setup (`auth.setup.ts` + `authenticated.spec.ts`), CI passthrough for `E2E_USER_*` secrets, and `npm run test:e2e` as the full Playwright entrypoint.
 - 2026-03-25: Phase 6 follow-up (`ebde961`). Billing page: move `planCheckoutState` to server-safe module; relax billing GET path; dev-only filter for React 19 / next-themes script warning; login/documents E2E and smoke isolation fixes; optional authenticated E2E passes with real Supabase user.
 - 2026-03-25: Phase 7 started. Added baseline runbooks under `docs/runbooks/` (release checklist + incident response / monitoring table).
+- 2026-03-25: Worker analysis bounds: `OPENAI_MAX_EXTRACTED_CHARS` (`auto` aligns with chunked map coverage via `max_chars_under_chunk_cap`), early truncation before split, release checklist item for OpenAI/chunk env review; `max_chars_under_chunk_cap` shared with `split_text_into_chunks` tail limit.
