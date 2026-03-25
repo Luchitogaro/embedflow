@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import type { Messages } from "@/messages/en"
@@ -12,7 +11,6 @@ type AuthCopy = Messages["auth"]
 
 export function LoginForm({ t }: { t: AuthCopy }) {
   const supabase = createClient()
-  const router = useRouter()
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -20,12 +18,13 @@ export function LoginForm({ t }: { t: AuthCopy }) {
   const [showPassword, setShowPassword] = useState(false)
   const [password, setPassword] = useState("")
 
-  const handleMagicLink = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleMagicLink = async () => {
     setLoading(true)
     setError("")
+    const emailInput = document.getElementById("login-email") as HTMLInputElement | null
+    const emailValue = emailInput?.value?.trim() ?? email
     const { error } = await supabase.auth.signInWithOtp({
-      email,
+      email: emailValue,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     })
     setLoading(false)
@@ -36,18 +35,35 @@ export function LoginForm({ t }: { t: AuthCopy }) {
     }
   }
 
-  const handlePasswordLogin = async (e: React.FormEvent) => {
+  const handlePasswordLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
     setError("")
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    setLoading(false)
+    const emailEl = document.getElementById("login-email") as HTMLInputElement | null
+    const passwordEl = document.getElementById("login-password") as HTMLInputElement | null
+    const emailValue = emailEl?.value?.trim() ?? ""
+    const passwordValue = passwordEl?.value ?? ""
+    const { error } = await supabase.auth.signInWithPassword({
+      email: emailValue,
+      password: passwordValue,
+    })
     if (error) {
+      setLoading(false)
       setError(error.message)
-    } else {
-      router.push("/")
-      router.refresh()
+      return
     }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    setLoading(false)
+    if (!session) {
+      setError("Could not establish a session. Please try again.")
+      return
+    }
+
+    // Full navigation so SSR and Playwright see the same cookies as the browser client (router.push alone can race).
+    window.location.assign("/dashboard")
   }
 
   if (magicSent) {
@@ -78,11 +94,12 @@ export function LoginForm({ t }: { t: AuthCopy }) {
         <p className="mt-1 text-sm text-muted-foreground">{t.loginSubtitle}</p>
       </div>
 
-      <form onSubmit={handlePasswordLogin} className="mb-6 space-y-4">
+      <form method="post" noValidate onSubmit={handlePasswordLogin} className="mb-6 space-y-4">
         <div>
           <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-foreground">{t.email}</label>
           <input
             id="login-email"
+            name="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -96,6 +113,7 @@ export function LoginForm({ t }: { t: AuthCopy }) {
           <div className="relative">
             <input
               id="login-password"
+              name="password"
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}

@@ -85,7 +85,7 @@ export function SignupForm({ t }: { t: AuthCopy }) {
         <p className="mt-1 text-sm text-muted-foreground">{t.signupSubtitle}</p>
       </div>
 
-      <form onSubmit={handleSignup} className="mb-6 space-y-4">
+      <form method="post" onSubmit={handleSignup} className="mb-6 space-y-4">
         <div>
           <label htmlFor="signup-name" className="mb-1.5 block text-sm font-medium text-foreground">{t.fullName}</label>
           <input

@@ -44,14 +44,43 @@ export default async function DocumentsPage() {
 
   if (!user) redirect("/login")
 
-  const { data: documents } = await supabase
+  // Same core query as the dashboard (no nested embed). Nested `analyses(...)` embeds can return
+  // empty rows under PostgREST/RLS edge cases even when documents exist; fetch analyses separately.
+  const { data: documents, error: documentsError } = await supabase
     .from("documents")
-    .select("id, filename, status, created_at, analyses(status, risk_flags)")
+    .select("id, filename, status, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(50)
 
+  if (documentsError) {
+    console.error("documents list:", documentsError.message)
+  }
+
   const docs = documents ?? []
+  const docIds = docs.map((d) => d.id)
+
+  const analysesByDocId = new Map<
+    string,
+    { status: string; risk_flags: unknown }
+  >()
+  if (docIds.length > 0) {
+    const { data: analysisRows } = await supabase
+      .from("analyses")
+      .select("document_id, status, risk_flags, created_at")
+      .in("document_id", docIds)
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+
+    for (const row of analysisRows ?? []) {
+      if (!analysesByDocId.has(row.document_id)) {
+        analysesByDocId.set(row.document_id, {
+          status: row.status,
+          risk_flags: row.risk_flags,
+        })
+      }
+    }
+  }
 
   const deleteCopy = {
     deleteConfirm: messages.documentDetail.deleteConfirm,
@@ -61,7 +90,7 @@ export default async function DocumentsPage() {
   }
 
   const rows: DocumentListRow[] = docs.map((doc) => {
-    const analysis = doc.analyses?.[0]
+    const analysis = analysesByDocId.get(doc.id)
     const rawFlags = parseJsonField<unknown>(analysis?.risk_flags, [])
     const riskFlags = Array.isArray(rawFlags)
       ? (rawFlags as Array<{ risk_level: string }>)

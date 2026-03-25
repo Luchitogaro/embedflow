@@ -16,10 +16,13 @@ test.describe("authenticated dashboard", () => {
   test("billing settings: heading and permission copy", async ({ page }) => {
     await page.goto("/dashboard/settings/billing")
     await expect(page).not.toHaveURL(/\/login/)
-    await expect(page.getByRole("heading", { level: 1, name: /billing|facturación|faturamento/i })).toBeVisible()
+    // EN: Billing · ES: Facturación · PT: Cobrança (not "faturamento")
+    await expect(
+      page.getByRole("heading", { level: 1, name: /billing|facturación|cobrança|faturamento/i })
+    ).toBeVisible()
     await expect(
       page.getByText(
-        /Only organization owners|Subscribe to a paid plan|Solo propietarios|Somente proprietários|Manage subscription|Gestionar|Gerenciar|gestionar la facturación|portal Stripe/i
+        /Only organization owners|Subscribe to a paid plan|Solo propietarios|Somente proprietários|Manage subscription|Gestionar|Gerenciar|gestionar la facturación|portal Stripe|assinatura|plano pago|cobrança/i
       )
     ).toBeVisible()
   })

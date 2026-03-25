@@ -2,8 +2,6 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import type { Plan } from "@/lib/plan-limits"
-
 type Billable = "starter" | "pro" | "team"
 
 type PortalStrings = {
@@ -79,24 +77,4 @@ export function CheckoutButton({
       {loading ? strings.redirecting : label}
     </Button>
   )
-}
-
-export function planCheckoutState(
-  planId: Plan,
-  currentPlan: Plan,
-  downgradeHint: string
-): { showCheckout: boolean; disabledReason: string | null } {
-  if (planId === "free" || planId === "enterprise") {
-    return { showCheckout: false, disabledReason: null }
-  }
-  if (planId === currentPlan) {
-    return { showCheckout: false, disabledReason: null }
-  }
-  const order: Plan[] = ["free", "starter", "pro", "team", "enterprise"]
-  const cur = order.indexOf(currentPlan)
-  const nxt = order.indexOf(planId)
-  if (nxt > cur) {
-    return { showCheckout: true, disabledReason: null }
-  }
-  return { showCheckout: false, disabledReason: downgradeHint }
 }

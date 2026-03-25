@@ -5,8 +5,8 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { normalizePlan, type Plan } from "@/lib/plan-limits"
 import { countMonthlyQuotaDocuments, getEffectiveMonthlyDocLimit } from "@/lib/monthly-upload-quota"
-import { CheckoutButton, PortalButton, planCheckoutState } from "./billing-actions"
-import { ensureUserAndOrg } from "@/lib/ensure-user-org"
+import { CheckoutButton, PortalButton } from "./billing-actions"
+import { planCheckoutState } from "./plan-checkout-state"
 import { getMessagesForRequest } from "@/lib/i18n/server"
 
 export default async function BillingPage() {
@@ -17,8 +17,7 @@ export default async function BillingPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user?.email) redirect("/login")
 
-  await ensureUserAndOrg(user.id, user.email)
-
+  // Read-only: avoid ensureUserAndOrg (needs service role if public.users row is missing).
   const { data: userRow } = await supabase
     .from("users")
     .select("org_id, role")

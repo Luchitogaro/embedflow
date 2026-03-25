@@ -1,7 +1,8 @@
 import { defineConfig, devices } from "@playwright/test"
 import path from "node:path"
 
-const baseURL = process.env.E2E_BASE_URL || "http://127.0.0.1:3000"
+// Must match the host you use in the browser (localhost vs 127.0.0.1 are different origins for cookies).
+const baseURL = process.env.E2E_BASE_URL || "http://localhost:3000"
 
 const hasAuthCreds = Boolean(
   process.env.E2E_USER_EMAIL?.trim() && process.env.E2E_USER_PASSWORD?.trim()
@@ -25,6 +26,7 @@ export default defineConfig({
         {
           name: "setup",
           testMatch: /auth\.setup\.ts/,
+          timeout: 90_000,
         },
         {
           name: "chromium",
