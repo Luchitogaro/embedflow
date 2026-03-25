@@ -27,10 +27,29 @@ async def update_analysis(document_id: str, user_id: str, data: dict) -> None:
     """Store analysis results in Supabase."""
     client = get_client()
 
+    # Resolve canonical tenant ownership from the document row.
+    doc_res = (
+        client.table("documents")
+        .select("user_id, org_id")
+        .eq("id", document_id)
+        .limit(1)
+        .execute()
+    )
+    doc_rows = doc_res.data or []
+    if not doc_rows:
+        raise ValueError(f"Document not found: {document_id}")
+    owner_user_id = doc_rows[0].get("user_id")
+    owner_org_id = doc_rows[0].get("org_id")
+    if owner_user_id and owner_user_id != user_id:
+        raise ValueError(
+            f"Refusing analysis write: document {document_id} belongs to {owner_user_id}, got {user_id}"
+        )
+
     # Build analysis payload
     analysis_data = {
         "document_id": document_id,
-        "user_id": user_id,
+        "user_id": owner_user_id or user_id,
+        "org_id": owner_org_id,
         "status": "done",
         "summary": data.get("summary"),
         "parties": data.get("parties", []),

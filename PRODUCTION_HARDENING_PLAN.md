@@ -33,9 +33,9 @@ Status values:
 
 | Phase | Name | Priority | Status | Target | Commit(s) | Evidence |
 |---|---|---|---|---|---|---|
-| 1 | Storage RLS isolation hardening | P0 | in_progress | 2 days | - | Migration drafted: `supabase/migrations/006_storage_rls_user_prefix_hardening.sql` |
-| 2 | Worker trust boundary hardening | P0 | in_progress | 2 days | - | Shared-secret auth implemented in web->worker paths and worker jobs router |
-| 3 | DB tenant integrity constraints | P0 | todo | 2 days | - | - |
+| 1 | Storage RLS isolation hardening | P0 | done | 2 days | `474d12a` | Cross-account test passed: user B receives 404 when accessing user A object path |
+| 2 | Worker trust boundary hardening | P0 | done | 2 days | `474d12a` | Worker `/jobs` now requires `x-worker-secret` and web calls include `WORKER_SHARED_SECRET` |
+| 3 | DB tenant integrity constraints | P0 | done | 2 days | `TBD (next commit)` | Migration 007 applied; null-org sanity 0/0; invalid insert blocked by tenant sync trigger |
 | 4 | Share-link compliance controls | P0/P1 | todo | 1 day | - | - |
 | 5 | Billing/usage auditability | P1 | todo | 1 day | - | - |
 | 6 | Security + a11y + E2E quality gate | P1 | todo | 2 days | - | - |
@@ -205,3 +205,7 @@ Usage accounting needs stronger auditability and consistency checks.
 - 2026-03-25: Initial production hardening plan created.
 - 2026-03-25: Phase 1 started. Added storage RLS hardening migration for user-prefix isolation in `contracts` bucket.
 - 2026-03-25: Phase 2 started. Added mandatory `WORKER_SHARED_SECRET` auth for `/jobs` endpoints and propagated `x-worker-secret` from web calls.
+- 2026-03-25: Phase 2 closed as done after baseline commit `474d12a`.
+- 2026-03-25: Phase 3 started. Added tenant-integrity migration (`analyses.org_id`, backfills, composite FK, sync trigger) and worker-side ownership validation before analysis writes.
+- 2026-03-25: Phase 1 closed as done after manual cross-account storage verification (B cannot access A object path).
+- 2026-03-25: Phase 3 closed as done after DB checks: org null counts returned 0/0 and invalid analysis insert was blocked by tenant sync trigger.
