@@ -18,6 +18,9 @@ jobs:
       WORKER_URL: http://127.0.0.1:8000
       WORKER_SHARED_SECRET: ci-worker-secret
       SHARE_LINK_TTL_DAYS: "30"
+      # Optional: GitHub repo secrets for full authenticated Playwright flow (also point Supabase env at a real project)
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -68,7 +71,7 @@ jobs:
             fi
             sleep 1
           done
-          npm run test:e2e:smoke
+          npm run test:e2e
 
   worker-quality:
     name: Worker quality checks

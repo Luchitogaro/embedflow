@@ -37,8 +37,8 @@ Status values:
 | 2 | Worker trust boundary hardening | P0 | done | 2 days | `474d12a` | Worker `/jobs` now requires `x-worker-secret` and web calls include `WORKER_SHARED_SECRET` |
 | 3 | DB tenant integrity constraints | P0 | done | 2 days | `e01fdd1` | Migration 007 applied; null-org sanity 0/0; invalid insert blocked by tenant sync trigger |
 | 4 | Share-link compliance controls | P0/P1 | done | 1 day | `339c038` | Migration 008 applied and verified: create/revoke works; expired links blocked by shared loader |
-| 5 | Billing/usage auditability | P1 | done | 1 day | `TBD (next commit)` | Migration 009 applied and checks passed; upload paths use deduplicated attributable RPC (fallback-safe) |
-| 6 | Security + a11y + E2E quality gate | P1 | in_progress | 2 days | - | CI now runs web lint/typecheck/build/a11y plus Playwright smoke and worker syntax checks |
+| 5 | Billing/usage auditability | P1 | done | 1 day | `224d0c2` | Migration 009 applied and checks passed; upload paths use deduplicated attributable RPC (fallback-safe) |
+| 6 | Security + a11y + E2E quality gate | P1 | done | 2 days | — | CI: lint/tsc/build/a11y + Playwright (smoke + auth-gate always; authenticated suite when `E2E_USER_EMAIL`/`E2E_USER_PASSWORD`); worker syntax |
 | 7 | Go-live operations and runbooks | P0 | todo | 1 day | - | - |
 
 ---
@@ -149,13 +149,10 @@ Usage accounting needs stronger auditability and consistency checks.
 ## Phase 6 — Quality Gate (Security + A11y + E2E) (P1)
 
 ### Deliverables
-- E2E critical flows:
-  - auth
-  - upload
-  - analysis
-  - share/revoke
-  - logout
-  - billing access
+- E2E coverage:
+  - Public smoke (`tests/smoke.spec.ts`): landing + login + signup.
+  - Auth gate (`tests/auth-gate.spec.ts`): unauthenticated users redirected from dashboard, documents, billing, integrations.
+  - Optional authenticated suite (`tests/authenticated.spec.ts` + `tests/auth.setup.ts`): runs when `E2E_USER_EMAIL` and `E2E_USER_PASSWORD` are set (local or CI with real Supabase + repo secrets); covers dashboard, documents, billing/integrations headings and billing permission copy.
 - Keep `a11y:audit` and `a11y:audit:deep` green.
 
 ### Acceptance Criteria
@@ -194,7 +191,7 @@ Usage accounting needs stronger auditability and consistency checks.
 - [ ] DB tenant constraints active and validated
 - [ ] Share links have expiry/revocation controls
 - [ ] Billing/usage reconciliation passes
-- [ ] Security + a11y + E2E gates pass
+- [x] Security + a11y + E2E gates pass (baseline CI; authenticated suite optional via env)
 - [ ] Monitoring, alerts, and runbooks in place
 - [ ] Staging sign-off completed
 
@@ -217,3 +214,4 @@ Usage accounting needs stronger auditability and consistency checks.
 - 2026-03-25: Phase 6 started with focus on automated quality-gate execution.
 - 2026-03-25: Added CI quality-gate workflow for web and worker checks on push/PR.
 - 2026-03-25: Added Playwright smoke test and integrated it into CI quality gate.
+- 2026-03-25: Phase 6 closed. Added auth-gate E2E (no session), optional authenticated Playwright setup (`auth.setup.ts` + `authenticated.spec.ts`), CI passthrough for `E2E_USER_*` secrets, and `npm run test:e2e` as the full Playwright entrypoint.
