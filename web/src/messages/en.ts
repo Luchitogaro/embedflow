@@ -239,8 +239,27 @@ export const messagesEn = {
       doneSub: "Redirecting to analysis status...",
       drop: "Drop your contract here",
       click: "Drag & drop or click to upload",
-      fileTypes: "PDF, DOCX, or TXT — up to 10MB",
+      fileTypes: "PDF, DOCX, or TXT — up to {maxMb} MB",
       failed: "Upload failed",
+      enqueueWorkerFailed:
+        "File saved, but analysis did not start (worker unreachable or rejected the request). Open the document and use “Re-queue analysis”, or check WORKER_URL / WORKER_SHARED_SECRET and worker logs.",
+      errors: {
+        unauthorized: "You must be signed in to upload.",
+        noFile: "No file was selected.",
+        unsupportedType: "Unsupported file type. Use PDF, DOCX, or TXT.",
+        tooLarge: "File is too large. Maximum size is {maxMb} MB.",
+        planLimitReached:
+          "Monthly upload limit reached for the {planLabel} plan ({limit} documents per month).",
+        bodyTruncated:
+          "The upload was interrupted. The file may be too large for the current server limit—try a smaller file or contact support.",
+        network: "Network error while uploading. Check your connection and try again.",
+        generic: "Something went wrong while uploading.",
+        storageFailed: "Could not store the file. Please try again.",
+        storageObjectTooLarge:
+          "This file exceeds the upload limit set for Storage in your Supabase project (bucket or global limit). In the Supabase dashboard, raise the file size limit for the contracts bucket (or project default) to at least match the app, or use a smaller file.",
+        saveFailed: "Could not save the document. Please try again.",
+        setupFailed: "Your account is not fully set up yet. Try again or contact support.",
+      },
     },
     onboarding: {
       title: "Welcome to Embedflow",

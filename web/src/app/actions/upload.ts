@@ -2,133 +2,154 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
-import { normalizePlan } from "@/lib/plan-limits"
 import { ensureUserAndOrg } from "@/lib/ensure-user-org"
-import { countMonthlyQuotaDocuments, getEffectiveMonthlyDocLimit } from "@/lib/monthly-upload-quota"
-import { getLocale } from "@/lib/i18n/server"
+import { getLocale, getMessagesForRequest } from "@/lib/i18n/server"
 import { localeForWorkerAnalysis } from "@/lib/worker-locale"
 import { getWorkerUrl, workerAuthHeaders } from "@/lib/worker-auth"
+import { interpolate } from "@/lib/i18n/interpolate"
+import { uploadPlanLimitMessageIfExceeded } from "@/lib/upload-plan-limit"
+import { UPLOAD_MAX_FILE_BYTES, UPLOAD_MAX_FILE_MB } from "@/lib/upload-limits"
+import { messageForStorageUploadError } from "@/lib/storage-upload-errors"
 
-async function planLimitErrorIfExceeded(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string,
-  orgId: string | null,
-  email: string | null | undefined
-): Promise<string | null> {
-  let plan = "free"
-  if (orgId) {
-    const { data: org } = await supabase
-      .from("organizations")
-      .select("plan")
-      .eq("id", orgId)
-      .single()
-    plan = normalizePlan(org?.plan)
-  }
-
-  const monthlyLimit = getEffectiveMonthlyDocLimit(plan, userId, email)
-  if (monthlyLimit == null) return null
-
-  const used = await countMonthlyQuotaDocuments(supabase, { orgId, userId })
-  if (used >= monthlyLimit) {
-    return `Monthly upload limit reached for ${plan} plan (${monthlyLimit} documents).`
-  }
-  return null
-}
-
-export type UploadDocumentResult = { documentId: string } | { error: string }
+export type UploadDocumentResult =
+  | { documentId: string; enqueueFailed?: boolean }
+  | { error: string }
 
 export async function uploadDocument(formData: FormData): Promise<UploadDocumentResult> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { messages } = await getMessagesForRequest()
+  const e = messages.dashboard.upload.errors
 
-  if (!user) return { error: "Unauthorized" }
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-  const file = formData.get("file") as File | null
-  if (!file) return { error: "No file provided" }
+    if (!user) return { error: e.unauthorized }
 
-  const allowedTypes = [
-    "application/pdf",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "text/plain",
-  ]
-  if (!allowedTypes.includes(file.type)) throw new Error("Unsupported file type")
+    const file = formData.get("file") as File | null
+    if (!file) return { error: e.noFile }
 
-  // Ensure user + org exist in public schema
-  const userData = await ensureUserAndOrg(user.id, user.email ?? "")
-  const limitErr = await planLimitErrorIfExceeded(supabase, user.id, userData.org_id, user.email)
-  if (limitErr) return { error: limitErr }
+    if (file.size > UPLOAD_MAX_FILE_BYTES) {
+      return { error: interpolate(e.tooLarge, { maxMb: UPLOAD_MAX_FILE_MB }) }
+    }
 
-  // Upload to Supabase Storage (using user's anon key - RLS allows own files)
-  const fileBuffer = await file.arrayBuffer()
-  const filePath = `${user.id}/${Date.now()}-${file.name}`
+    const allowedTypes = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/plain",
+    ]
+    if (!allowedTypes.includes(file.type)) return { error: e.unsupportedType }
 
-  const { error: uploadError } = await supabase.storage
-    .from("contracts")
-    .upload(filePath, fileBuffer, { contentType: file.type })
-
-  if (uploadError) throw new Error(uploadError.message)
-
-  const { data: { publicUrl } } = supabase.storage
-    .from("contracts")
-    .getPublicUrl(filePath)
-
-  // Create document record
-  const { data: document, error: dbError } = await supabase
-    .from("documents")
-    .insert({
-      user_id: user.id,
-      org_id: userData.org_id,
-      filename: file.name,
-      file_url: publicUrl,
-      file_size: file.size,
-      mime_type: file.type,
-      status: "pending",
-    })
-    .select()
-    .single()
-
-  if (dbError) throw new Error(dbError.message)
-
-  // Record usage
-  if (userData.org_id) {
+    let userData: Awaited<ReturnType<typeof ensureUserAndOrg>>
     try {
-      await supabase.rpc("record_document_upload_usage", {
-        p_org_id: userData.org_id,
-        p_user_id: user.id,
-        p_document_id: document.id,
-      }).throwOnError()
+      userData = await ensureUserAndOrg(user.id, user.email ?? "")
     } catch {
-      // Backward compatibility if migration 009 is not applied yet.
-      try {
-        await supabase.rpc("record_usage", {
-          p_org_id: userData.org_id,
-          p_event_type: "doc_upload",
-          p_quantity: 1,
-        })
-      } catch {
-        /* non-fatal */
+      return { error: e.setupFailed }
+    }
+
+    const limitErr = await uploadPlanLimitMessageIfExceeded(
+      supabase,
+      user.id,
+      userData.org_id,
+      user.email,
+      messages
+    )
+    if (limitErr) return { error: limitErr }
+
+    const fileBuffer = await file.arrayBuffer()
+    const filePath = `${user.id}/${Date.now()}-${file.name}`
+
+    const { error: uploadError } = await supabase.storage
+      .from("contracts")
+      .upload(filePath, fileBuffer, { contentType: file.type })
+
+    if (uploadError) {
+      console.error("storage upload:", uploadError)
+      return {
+        error: messageForStorageUploadError(
+          {
+            message: uploadError.message,
+            statusCode: (uploadError as { statusCode?: string }).statusCode,
+          },
+          e
+        ),
       }
     }
-  }
 
-  // Enqueue worker job (fire-and-forget)
-  try {
-    const wLocale = localeForWorkerAnalysis(await getLocale())
-    await fetch(`${getWorkerUrl()}/jobs/`, {
-      method: "POST",
-      headers: workerAuthHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({
-        document_id: document.id,
-        file_url: publicUrl,
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("contracts").getPublicUrl(filePath)
+
+    const { data: document, error: dbError } = await supabase
+      .from("documents")
+      .insert({
         user_id: user.id,
         org_id: userData.org_id,
-        locale: wLocale,
-      }),
-    })
-  } catch (e) {
-    console.error("Failed to enqueue worker job:", e)
-  }
+        filename: file.name,
+        file_url: publicUrl,
+        file_size: file.size,
+        mime_type: file.type,
+        status: "pending",
+      })
+      .select()
+      .single()
 
-  revalidatePath("/dashboard")
-  return { documentId: document.id }
+    if (dbError) {
+      console.error("documents insert:", dbError)
+      return { error: e.saveFailed }
+    }
+
+    if (userData.org_id) {
+      try {
+        await supabase
+          .rpc("record_document_upload_usage", {
+            p_org_id: userData.org_id,
+            p_user_id: user.id,
+            p_document_id: document.id,
+          })
+          .throwOnError()
+      } catch {
+        try {
+          await supabase.rpc("record_usage", {
+            p_org_id: userData.org_id,
+            p_event_type: "doc_upload",
+            p_quantity: 1,
+          })
+        } catch {
+          /* non-fatal */
+        }
+      }
+    }
+
+    let enqueueFailed = false
+    try {
+      const wLocale = localeForWorkerAnalysis(await getLocale())
+      const res = await fetch(`${getWorkerUrl()}/jobs/`, {
+        method: "POST",
+        headers: workerAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          document_id: document.id,
+          file_url: publicUrl,
+          user_id: user.id,
+          org_id: userData.org_id,
+          locale: wLocale,
+        }),
+      })
+      if (!res.ok) {
+        const body = await res.text().catch(() => "")
+        console.error("Worker enqueue failed:", res.status, body)
+        enqueueFailed = true
+      }
+    } catch (err) {
+      console.error("Failed to enqueue worker job:", err)
+      enqueueFailed = true
+    }
+
+    revalidatePath("/dashboard")
+    return { documentId: document.id, ...(enqueueFailed ? { enqueueFailed: true } : {}) }
+  } catch (err) {
+    console.error("uploadDocument:", err)
+    return { error: e.generic }
+  }
 }

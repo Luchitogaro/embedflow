@@ -51,21 +51,23 @@ async def enqueue_job(
         "created_at": datetime.utcnow().isoformat(),
     }
 
+    # Always register in memory so process_job / status polling work even when Redis is enabled.
+    # (There is no separate BullMQ consumer in this repo; processing runs via FastAPI BackgroundTasks.)
+    _memory_jobs[job_id] = job_data
+
     if USE_REDIS and redis_client:
         try:
             import redis
             from bullmq import Queue
             queue = Queue("embedflow-jobs", redis=redis_client)
             await queue.add(job_id, job_data, remove_on_complete=True)
-            logger.info(f"Enqueued job {job_id} for document {document_id}")
+            logger.info(f"Enqueued job {job_id} for document {document_id} (Redis + memory)")
             return job_id
         except Exception as e:
-            logger.warning(f"Redis/BullMQ unavailable, falling back to in-memory: {e}")
+            logger.warning(f"Redis/BullMQ unavailable, using in-memory queue only: {e}")
 
-    # In-memory fallback
     _memory_queue.append(job_id)
-    _memory_jobs[job_id] = job_data
-    logger.info(f"[DEV] Enqueued job {job_id} (in-memory)")
+    logger.info(f"[DEV] Enqueued job {job_id} (in-memory queue)")
     return job_id
 
 

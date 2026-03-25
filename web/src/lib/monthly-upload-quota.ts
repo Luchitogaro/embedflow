@@ -23,16 +23,25 @@ function parseCsvEnv(value: string | undefined): string[] {
 
 /**
  * When enabled (local `next dev` or `EMBEDFLOW_ALLOW_QUOTA_BYPASS=true`), users listed by
- * `EMBEDFLOW_DEV_QUOTA_BYPASS_USER_IDS` or `EMBEDFLOW_DEV_QUOTA_BYPASS_EMAILS` skip monthly caps.
+ * `EMBEDFLOW_DEV_QUOTA_BYPASS_USER_IDS` (Supabase auth UUIDs) or `EMBEDFLOW_DEV_QUOTA_BYPASS_EMAILS`
+ * skip monthly caps. Entries in the USER_IDS list that look like emails (`@`) are matched against
+ * the session email so a mistaken copy into the wrong variable still works in dev.
  */
 export function isDevQuotaBypassForUser(userId: string, email?: string | null): boolean {
   if (!quotaBypassRuntimeEnabled()) return false
 
-  const ids = parseCsvEnv(process.env.EMBEDFLOW_DEV_QUOTA_BYPASS_USER_IDS)
-  if (ids.includes(userId)) return true
+  const idList = parseCsvEnv(process.env.EMBEDFLOW_DEV_QUOTA_BYPASS_USER_IDS)
+  if (idList.includes(userId)) return true
+
+  const emailLower = email?.toLowerCase()
+  if (emailLower) {
+    for (const entry of idList) {
+      if (entry.includes("@") && entry.toLowerCase() === emailLower) return true
+    }
+  }
 
   const emails = parseCsvEnv(process.env.EMBEDFLOW_DEV_QUOTA_BYPASS_EMAILS).map((e) => e.toLowerCase())
-  if (email && emails.includes(email.toLowerCase())) return true
+  if (emailLower && emails.includes(emailLower)) return true
 
   return false
 }

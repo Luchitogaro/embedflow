@@ -243,8 +243,27 @@ export const messagesPt: Messages = {
       doneSub: "Redirecionando para o status da análise...",
       drop: "Solte seu contrato aqui",
       click: "Arraste e solte ou clique para enviar",
-      fileTypes: "PDF, DOCX ou TXT — até 10 MB",
+      fileTypes: "PDF, DOCX ou TXT — até {maxMb} MB",
       failed: "Falha no envio",
+      enqueueWorkerFailed:
+        "Arquivo salvo, mas a análise não iniciou (worker inacessível ou rejeitou a requisição). Abra o documento e use “Re-enfileirar”, ou confira WORKER_URL / WORKER_SHARED_SECRET e os logs do worker.",
+      errors: {
+        unauthorized: "Faça login para enviar arquivos.",
+        noFile: "Nenhum arquivo foi selecionado.",
+        unsupportedType: "Tipo de arquivo não suportado. Use PDF, DOCX ou TXT.",
+        tooLarge: "Arquivo grande demais. O tamanho máximo é {maxMb} MB.",
+        planLimitReached:
+          "Limite mensal de envios atingido no plano {planLabel} ({limit} documentos por mês).",
+        bodyTruncated:
+          "O envio foi interrompido. O arquivo pode exceder o limite do servidor — tente um menor ou fale com o suporte.",
+        network: "Erro de rede ao enviar. Verifique a conexão e tente de novo.",
+        generic: "Algo deu errado ao enviar o arquivo.",
+        storageFailed: "Não foi possível armazenar o arquivo. Tente de novo.",
+        storageObjectTooLarge:
+          "O arquivo excede o limite de upload do Storage no seu projeto Supabase (bucket ou limite global). No painel do Supabase, aumente o limite do bucket contracts (ou o padrão do projeto) para bater com o app, ou use um arquivo menor.",
+        saveFailed: "Não foi possível salvar o documento. Tente de novo.",
+        setupFailed: "Sua conta ainda não está pronta. Tente de novo ou fale com o suporte.",
+      },
     },
     onboarding: {
       title: "Bem-vindo ao Embedflow",

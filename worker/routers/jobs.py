@@ -14,7 +14,6 @@ from services.db import update_document_status
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-USE_REDIS = os.getenv("USE_REDIS", "false").lower() == "true"
 WORKER_SHARED_SECRET = (os.getenv("WORKER_SHARED_SECRET") or "").strip()
 
 
@@ -36,6 +35,7 @@ async def process_job(
     """Process a single analysis job."""
     try:
         _memory_jobs[job_id]["status"] = "processing"
+        await update_document_status(document_id, "processing")
         logger.info(f"[{job_id}] Processing document {document_id}")
 
         result = await run_analysis(
@@ -76,8 +76,8 @@ async def enqueue(
 ):
     """
     Enqueue a document for analysis.
-    With USE_REDIS=false, processes inline immediately.
-    With USE_REDIS=true, just enqueues for the BullMQ worker.
+    Registers the job and schedules processing via FastAPI BackgroundTasks (same process).
+    Optional Redis/BullMQ push is for future external workers only.
     """
     _require_worker_secret(x_worker_secret)
     loc = (req.locale or "en").strip() or "en"
@@ -90,11 +90,11 @@ async def enqueue(
         locale=loc,
     )
 
-    if not USE_REDIS:
-        # No Redis worker — process inline in background
-        background_tasks.add_task(
-            process_job, job_id, req.document_id, req.file_url, req.user_id, loc
-        )
+    # Always run analysis in this process (BackgroundTasks). Redis enqueue is optional telemetry;
+    # there is no standalone BullMQ worker in-tree, so USE_REDIS=true previously left jobs stuck.
+    background_tasks.add_task(
+        process_job, job_id, req.document_id, req.file_url, req.user_id, loc
+    )
 
     return EnqueueResponse(job_id=job_id, status="queued")
 

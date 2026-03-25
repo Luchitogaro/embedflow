@@ -243,8 +243,27 @@ export const messagesEs: Messages = {
       doneSub: "Redirigiendo al estado del análisis...",
       drop: "Suelta tu contrato aquí",
       click: "Arrastra o haz clic para subir",
-      fileTypes: "PDF, DOCX o TXT — hasta 10 MB",
+      fileTypes: "PDF, DOCX o TXT — hasta {maxMb} MB",
       failed: "Error al subir",
+      enqueueWorkerFailed:
+        "Archivo guardado, pero el análisis no arrancó (worker no alcanzable o rechazó la petición). Abre el documento y usa “Volver a encolar”, o revisa WORKER_URL / WORKER_SHARED_SECRET y los logs del worker.",
+      errors: {
+        unauthorized: "Debes iniciar sesión para subir archivos.",
+        noFile: "No se seleccionó ningún archivo.",
+        unsupportedType: "Tipo de archivo no admitido. Usa PDF, DOCX o TXT.",
+        tooLarge: "El archivo es demasiado grande. El tamaño máximo es {maxMb} MB.",
+        planLimitReached:
+          "Límite mensual de subidas alcanzado en el plan {planLabel} ({limit} documentos al mes).",
+        bodyTruncated:
+          "La subida se cortó. El archivo puede ser demasiado grande para el límite del servidor; prueba con uno más pequeño o contacta con soporte.",
+        network: "Error de red al subir. Comprueba tu conexión e inténtalo de nuevo.",
+        generic: "Algo salió mal al subir el archivo.",
+        storageFailed: "No se pudo guardar el archivo. Inténtalo de nuevo.",
+        storageObjectTooLarge:
+          "El archivo supera el límite de subida configurado en Storage en tu proyecto Supabase (bucket o límite global). En el panel de Supabase, sube el límite del bucket contracts (o el predeterminado del proyecto) para que coincida con la app, o usa un archivo más pequeño.",
+        saveFailed: "No se pudo registrar el documento. Inténtalo de nuevo.",
+        setupFailed: "La cuenta no está lista. Inténtalo de nuevo o contacta con soporte.",
+      },
     },
     onboarding: {
       title: "Bienvenido a Embedflow",

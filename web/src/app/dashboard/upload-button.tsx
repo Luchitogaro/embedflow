@@ -3,9 +3,13 @@
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Upload, Loader2, CheckCircle2 } from "lucide-react"
+import { toast } from "sonner"
 import { uploadDocument } from "@/app/actions/upload"
 import { cn } from "@/lib/utils"
 import type { Messages } from "@/messages/en"
+import { interpolate } from "@/lib/i18n/interpolate"
+import { UPLOAD_MAX_FILE_BYTES, UPLOAD_MAX_FILE_MB } from "@/lib/upload-limits"
+import { mapUnknownUploadError } from "@/lib/upload-client-errors"
 
 type UploadCopy = Messages["dashboard"]["upload"]
 
@@ -18,8 +22,12 @@ export function UploadButton({ upload }: { upload: UploadCopy }) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleFile = async (file: File) => {
-    setUploading(true)
     setError("")
+    if (file.size > UPLOAD_MAX_FILE_BYTES) {
+      setError(interpolate(upload.errors.tooLarge, { maxMb: UPLOAD_MAX_FILE_MB }))
+      return
+    }
+    setUploading(true)
     try {
       const formData = new FormData()
       formData.append("file", file)
@@ -29,13 +37,18 @@ export function UploadButton({ upload }: { upload: UploadCopy }) {
         setUploading(false)
         return
       }
+      if (result.enqueueFailed) {
+        toast.warning(upload.enqueueWorkerFailed)
+      }
       setDone(true)
       setTimeout(() => {
         setDone(false)
         router.push(`/dashboard/documents/${result.documentId}`)
       }, 1200)
     } catch (err) {
-      setError(err instanceof Error ? err.message : upload.failed)
+      setError(
+        mapUnknownUploadError(err instanceof Error ? err.message : "", upload.errors)
+      )
       setUploading(false)
     }
   }

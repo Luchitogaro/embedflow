@@ -3,6 +3,7 @@ AI Extractor service — core contract analysis using OpenAI GPT-4o.
 """
 
 import os
+import re
 import json
 import asyncio
 import logging
@@ -16,8 +17,66 @@ logger = logging.getLogger(__name__)
 
 openai_client: OpenAI | None = None
 
-OPENAI_RETRIES = max(1, int(os.getenv("OPENAI_MAX_RETRIES", "3")))
+OPENAI_RETRIES = max(1, int(os.getenv("OPENAI_MAX_RETRIES", "5")))
 OPENAI_TIMEOUT_SEC = float(os.getenv("OPENAI_CALL_TIMEOUT_SEC", "180"))
+# Single-shot path: contracts up to this length use one extraction call (full text, no truncation).
+# Longer contracts use chunked map → aggregate → merge (full document, multiple smaller API calls).
+OPENAI_EXTRACTION_MAX_INPUT_CHARS = max(
+    5_000, int(os.getenv("OPENAI_EXTRACTION_MAX_INPUT_CHARS", "45000"))
+)
+OPENAI_EXTRACTION_CHUNK_THRESHOLD = max(
+    OPENAI_EXTRACTION_MAX_INPUT_CHARS,
+    int(os.getenv("OPENAI_EXTRACTION_CHUNK_THRESHOLD", "45000")),
+)
+OPENAI_PITCH_CONTEXT_CHARS = max(
+    1_000, int(os.getenv("OPENAI_PITCH_CONTEXT_CHARS", "30000"))
+)
+OPENAI_CHUNK_CHAR_SIZE = max(8_000, int(os.getenv("OPENAI_CHUNK_CHAR_SIZE", "52000")))
+OPENAI_CHUNK_OVERLAP = max(0, int(os.getenv("OPENAI_CHUNK_OVERLAP", "2000")))
+OPENAI_CHUNK_HARD_MAX = max(
+    OPENAI_CHUNK_CHAR_SIZE,
+    int(os.getenv("OPENAI_CHUNK_HARD_MAX", "80000")),
+)
+OPENAI_CHUNK_MAX_COUNT = max(2, int(os.getenv("OPENAI_CHUNK_MAX_COUNT", "72")))
+# Large chunk windows × high concurrency exhausts TPM quickly (e.g. 6×33k ≈ 200k in one burst).
+OPENAI_CHUNK_MAP_CONCURRENCY = max(
+    1, min(32, int(os.getenv("OPENAI_CHUNK_MAP_CONCURRENCY", "2")))
+)
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
+OPENAI_MODEL_CHUNK = os.getenv("OPENAI_MODEL_CHUNK", "gpt-4o-mini")
+OPENAI_MODEL_MERGE = os.getenv("OPENAI_MODEL_MERGE", "gpt-4o")
+
+
+_RETRY_AFTER_HINT_RE = re.compile(r"try again in ([\d.]+)\s*s", re.IGNORECASE)
+
+
+def _retry_wait_seconds(exc: BaseException, attempt: int) -> float:
+    """Backoff for retries; use OpenAI's 'try again in Xs' when present (TPM 429)."""
+    base = min(12.0, 1.5 * (2**attempt))
+    is_rl = isinstance(exc, RateLimitError) or (
+        isinstance(exc, APIError) and getattr(exc, "status_code", None) == 429
+    )
+    if not is_rl:
+        return base
+
+    sec: float | None = None
+    if isinstance(exc, APIError):
+        resp = getattr(exc, "response", None)
+        if resp is not None:
+            ra = resp.headers.get("retry-after")
+            if ra is not None:
+                try:
+                    sec = float(ra)
+                except ValueError:
+                    pass
+    if sec is None:
+        m = _RETRY_AFTER_HINT_RE.search(str(exc))
+        if m:
+            sec = float(m.group(1))
+    if sec is not None:
+        # Small cushion so the minute bucket has cleared.
+        return min(180.0, max(sec + 2.5, 6.0))
+    return max(base, 65.0)
 
 
 def _openai_transient(exc: BaseException) -> bool:
@@ -35,7 +94,8 @@ def _get_client() -> OpenAI:
         key = os.getenv("OPENAI_API_KEY")
         if not key:
             raise RuntimeError("OPENAI_API_KEY not set")
-        openai_client = OpenAI(api_key=key)
+        # Retries and 429 backoff are handled in _call_openai (uses API "try again in Xs").
+        openai_client = OpenAI(api_key=key, max_retries=0)
     return openai_client
 
 
@@ -78,35 +138,88 @@ async def run_analysis(
     text = await extract_text_from_url(file_url)
     text = sanitize_extracted_text(text)
     if not text or len(text.strip()) < 50:
-        raise ValueError(f"Could not extract text from document (got {len(text)} chars)")
+        raise ValueError(
+            "No selectable text in this PDF (extracted "
+            f"{len(text)} chars, need at least 50). "
+            "This often happens with scanned or image-only PDFs (no text layer). "
+            "Options: run OCR (e.g. Adobe, macOS Preview export), save as a text-based PDF, "
+            "or upload DOCX/TXT instead."
+        )
 
-    # Truncate to ~600K chars (well within GPT-4o context)
-    text = text[:600_000]
-    logger.info(f"[{document_id}] Extracted {len(text)} chars of text")
+    raw_len = len(text)
+    logger.info("[%s] Contract text length: %s chars", document_id, raw_len)
 
-    # Step 2: Run extraction + risk analysis (locale matches app UI language)
     from prompts.extraction import (
         build_extraction_prompt,
         build_extraction_system,
         build_pitch_prompt,
         build_pitch_system,
     )
+    from services.chunked_pipeline import run_chunked_extraction
 
-    extraction_result = await _call_openai(
-        prompt=build_extraction_prompt(text, locale),
-        system=build_extraction_system(locale),
-        max_tokens=8192,
-        require_json=True,
-    )
+    if raw_len > OPENAI_EXTRACTION_CHUNK_THRESHOLD:
+        logger.info(
+            "[%s] Chunked extraction (threshold=%s, chunk=%s, overlap=%s, max_chunks=%s, hard_max=%s, map_concurrency=%s, chunk_model=%s, merge_model=%s)",
+            document_id,
+            OPENAI_EXTRACTION_CHUNK_THRESHOLD,
+            OPENAI_CHUNK_CHAR_SIZE,
+            OPENAI_CHUNK_OVERLAP,
+            OPENAI_CHUNK_MAX_COUNT,
+            OPENAI_CHUNK_HARD_MAX,
+            OPENAI_CHUNK_MAP_CONCURRENCY,
+            OPENAI_MODEL_CHUNK,
+            OPENAI_MODEL_MERGE,
+        )
 
-    parsed = _normalize_extraction_dict(_parse_extraction_json(extraction_result))
+        async def call_chunked_openai(
+            prompt: str,
+            *,
+            system: str = "",
+            max_tokens: int = 4096,
+            require_json: bool = False,
+            model: str | None = None,
+        ) -> str:
+            return await _call_openai(
+                prompt,
+                system=system,
+                max_tokens=max_tokens,
+                require_json=require_json,
+                model=model,
+            )
+
+        parsed = await run_chunked_extraction(
+            document_id,
+            text,
+            locale,
+            chunk_size=OPENAI_CHUNK_CHAR_SIZE,
+            overlap=OPENAI_CHUNK_OVERLAP,
+            chunk_model=OPENAI_MODEL_CHUNK,
+            merge_model=OPENAI_MODEL_MERGE,
+            call_openai=call_chunked_openai,
+            parse_extraction_json=_parse_extraction_json,
+            normalize_extraction_dict=_normalize_extraction_dict,
+            max_chunks=OPENAI_CHUNK_MAX_COUNT,
+            hard_max_chunk=OPENAI_CHUNK_HARD_MAX,
+            map_concurrency=OPENAI_CHUNK_MAP_CONCURRENCY,
+        )
+    else:
+        extraction_result = await _call_openai(
+            prompt=build_extraction_prompt(text, locale),
+            system=build_extraction_system(locale),
+            max_tokens=8192,
+            require_json=True,
+            model=OPENAI_MODEL,
+        )
+        parsed = _normalize_extraction_dict(_parse_extraction_json(extraction_result))
+
     logger.info(f"[{document_id}] Extraction complete: {list(parsed.keys())}")
 
     # Step 3: Generate deal pitch (same locale)
     pitch_result = await _call_openai(
-        prompt=build_pitch_prompt(text[:30_000], json.dumps(parsed), locale),
+        prompt=build_pitch_prompt(text[:OPENAI_PITCH_CONTEXT_CHARS], json.dumps(parsed), locale),
         system=build_pitch_system(locale),
         max_tokens=1024,
+        model=OPENAI_MODEL,
     )
     parsed["pitch_text"] = pitch_result.strip()
 
@@ -159,6 +272,8 @@ async def _call_openai(
     system: str = "",
     max_tokens: int = 4096,
     require_json: bool = False,
+    *,
+    model: str | None = None,
 ) -> str:
     """Make an OpenAI API call with timeout and transient-error retries (dead-letter = final exception in job)."""
     messages = []
@@ -167,7 +282,7 @@ async def _call_openai(
     messages.append({"role": "user", "content": prompt})
 
     request_kwargs = {
-        "model": "gpt-4o",
+        "model": model or OPENAI_MODEL,
         "messages": messages,
         "max_tokens": max_tokens,
     }
@@ -194,7 +309,7 @@ async def _call_openai(
             last_exc = e
             if attempt + 1 >= OPENAI_RETRIES or not _openai_transient(e):
                 raise
-            wait = min(12.0, 1.5 * (2**attempt))
+            wait = _retry_wait_seconds(e, attempt)
             logger.warning(
                 "OpenAI call failed (%s/%s), retry in %.1fs: %s",
                 attempt + 1,

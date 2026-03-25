@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react"
 import { Upload, File, X, Loader2, CheckCircle2, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { UPLOAD_MAX_FILE_MB } from "@/lib/upload-limits"
 
 interface UploadZoneProps {
   onUpload: (file: File) => Promise<{ documentId: string } | null>
@@ -89,7 +90,9 @@ export function UploadZone({ onUpload, disabled }: UploadZoneProps) {
           <p className="text-sm font-semibold text-slate-700">
             {dragging ? "Drop your contract here" : "Drag & drop or click to upload"}
           </p>
-          <p className="text-xs text-slate-500 mt-1">PDF, DOCX, or TXT — up to 10MB</p>
+          <p className="text-xs text-slate-500 mt-1">
+            PDF, DOCX, or TXT — up to {UPLOAD_MAX_FILE_MB} MB
+          </p>
         </>
       )}
 

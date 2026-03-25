@@ -30,6 +30,10 @@ pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
+If analysis fails with **no selectable text** / **0 chars**, the PDF is likely **scanned (image-only)**. The worker extracts text with pdfplumber + pypdf but cannot OCR images. Re-export with OCR, use a text-based PDF, or upload DOCX/TXT.
+
+**Long contracts:** If the extracted text is longer than `OPENAI_EXTRACTION_CHUNK_THRESHOLD` (default matches `OPENAI_EXTRACTION_MAX_INPUT_CHARS`, 45k chars), the worker runs **chunked analysis**: small JSON extractions per excerpt (`OPENAI_MODEL_CHUNK`, default `gpt-4o-mini`), aggregates them, then one **merge** call with the full schema (`OPENAI_MODEL_MERGE`, default `gpt-4o`). Defaults use larger windows (`OPENAI_CHUNK_CHAR_SIZE` 52k, overlap 2k) to limit call count; `OPENAI_CHUNK_MAX_COUNT` (default 72) and `OPENAI_CHUNK_HARD_MAX` (80k) widen windows up to that cap, then truncate the tail with a log line if the document is still too long. The map step runs **up to `OPENAI_CHUNK_MAP_CONCURRENCY` (default 2)** chunk requests in parallel; large windows already use many tokens per call, so higher values often hit TPM (429). Raise only if your org limit allows it; use `1` for strictly sequential calls. Tune these if you hit TPM limits per request. Shorter contracts still use a single `OPENAI_MODEL` call with the full text (no truncation).
+
 ### Database (Supabase)
 
 1. Create a Supabase project at supabase.com
@@ -38,6 +42,7 @@ uvicorn main:app --reload --port 8000
    - `supabase/migrations/002_documents_soft_delete.sql` (soft delete + RLS tweaks)
    - `supabase/migrations/003_share_and_integrations.sql` (share links + Slack webhook column)
 3. Enable Email auth in Supabase dashboard → Authentication → Providers
+4. **Storage file size:** Dashboard → Storage → open the `contracts` bucket → **Configuration** (or project *Settings → Storage*) and set the **max file upload size** to at least the app limit (`UPLOAD_MAX_FILE_MB` in `web/src/lib/upload-limits.ts`, currently 35 MB). The default project limit is often lower; large PDFs fail with HTTP 413 from Storage until this is raised.
 
 ### Stripe (billing)
 

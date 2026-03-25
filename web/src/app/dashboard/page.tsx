@@ -6,6 +6,8 @@ import { DashboardOnboardingBanner } from "@/components/dashboard-onboarding"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { getMessagesForRequest } from "@/lib/i18n/server"
+import { interpolate } from "@/lib/i18n/interpolate"
+import { UPLOAD_MAX_FILE_MB } from "@/lib/upload-limits"
 import { formatDate } from "@/lib/utils"
 
 function formatDocStatusLabel(
@@ -90,7 +92,12 @@ export default async function DashboardPage() {
       <DashboardOnboardingBanner copy={m.onboarding} />
 
       <div className="mb-8 sm:mb-10">
-        <UploadButton upload={m.upload} />
+        <UploadButton
+          upload={{
+            ...m.upload,
+            fileTypes: interpolate(m.upload.fileTypes, { maxMb: UPLOAD_MAX_FILE_MB }),
+          }}
+        />
       </div>
 
       <div className="mb-8 sm:mb-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

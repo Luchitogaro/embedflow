@@ -11,6 +11,9 @@ from urllib.parse import urlsplit, urlunsplit, quote, unquote
 
 logger = logging.getLogger(__name__)
 
+# Large PDFs (e.g. 30MB) need more than 60s on slow links; OpenAI step is separate.
+PDF_DOWNLOAD_TIMEOUT_SEC = float(os.getenv("PDF_DOWNLOAD_TIMEOUT_SEC", "300"))
+
 
 async def extract_text_from_url(file_url: str) -> str:
     """
@@ -34,7 +37,7 @@ async def extract_text_from_url(file_url: str) -> str:
     if authenticated_url != original_url:
         candidate_urls.append(original_url)
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    async with httpx.AsyncClient(timeout=PDF_DOWNLOAD_TIMEOUT_SEC) as client:
         last_error = None
         for candidate_url in candidate_urls:
             try:
@@ -68,22 +71,66 @@ def _to_authenticated_storage_url(file_url: str) -> str:
 
 
 def extract_text_from_bytes(pdf_bytes: bytes) -> str:
-    """Extract plain text from PDF bytes using pdfplumber."""
+    """Extract plain text from PDF bytes (pdfplumber first, then pypdf)."""
+    if not pdf_bytes or len(pdf_bytes) < 100:
+        logger.warning("PDF payload is empty or tiny (%s bytes)", len(pdf_bytes or b""))
+        return ""
+
+    text = _extract_with_pdfplumber(pdf_bytes)
+    if len(text.strip()) >= 50:
+        return text
+
+    text_pypdf = _extract_with_pypdf(pdf_bytes)
+    if len(text_pypdf.strip()) > len(text.strip()):
+        logger.info("pypdf extracted more text than pdfplumber; using pypdf result")
+        text = text_pypdf
+
+    if len(text.strip()) < 50:
+        text_fb = _fallback_extract(pdf_bytes)
+        if len(text_fb.strip()) > len(text.strip()):
+            text = text_fb
+
+    return text
+
+
+def _extract_with_pdfplumber(pdf_bytes: bytes) -> str:
     try:
         import pdfplumber
     except ImportError:
-        logger.warning("pdfplumber not installed, using fallback text extraction")
-        return _fallback_extract(pdf_bytes)
+        logger.warning("pdfplumber not installed")
+        return ""
 
-    text_parts = []
-    with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
-        for page in pdf.pages:
-            page_text = page.extract_text()
-            if page_text:
-                text_parts.append(page_text)
+    text_parts: list[str] = []
+    try:
+        with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
+            for page in pdf.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text_parts.append(page_text)
+    except Exception as e:
+        logger.warning("pdfplumber failed to read PDF: %s", e)
+        return ""
 
-    full_text = "\n\n".join(text_parts)
-    return full_text
+    return "\n\n".join(text_parts)
+
+
+def _extract_with_pypdf(pdf_bytes: bytes) -> str:
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        return ""
+
+    try:
+        reader = PdfReader(BytesIO(pdf_bytes))
+        parts: list[str] = []
+        for page in reader.pages:
+            t = page.extract_text()
+            if t:
+                parts.append(t)
+        return "\n\n".join(parts)
+    except Exception as e:
+        logger.warning("pypdf extraction failed: %s", e)
+        return ""
 
 
 def _fallback_extract(pdf_bytes: bytes) -> str:

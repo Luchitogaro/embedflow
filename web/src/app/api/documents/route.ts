@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { getLocale } from "@/lib/i18n/server"
+import { getLocale, getMessagesForRequest } from "@/lib/i18n/server"
 import { localeForWorkerAnalysis } from "@/lib/worker-locale"
-import { normalizePlan } from "@/lib/plan-limits"
-import { countMonthlyQuotaDocuments, getEffectiveMonthlyDocLimit } from "@/lib/monthly-upload-quota"
 import { getWorkerUrl, workerAuthHeaders } from "@/lib/worker-auth"
+import { interpolate } from "@/lib/i18n/interpolate"
+import { uploadPlanLimitMessageIfExceeded } from "@/lib/upload-plan-limit"
+import { UPLOAD_MAX_FILE_BYTES, UPLOAD_MAX_FILE_MB } from "@/lib/upload-limits"
+import { messageForStorageUploadError } from "@/lib/storage-upload-errors"
 
 export async function GET() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -25,57 +29,60 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const { messages } = await getMessagesForRequest()
+  const e = messages.dashboard.upload.errors
+
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    return NextResponse.json({ error: e.unauthorized }, { status: 401 })
   }
 
-  // Get org for usage tracking
-  const { data: userData } = await supabase
-    .from("users")
-    .select("org_id")
-    .eq("id", user.id)
-    .single()
+  const { data: userData } = await supabase.from("users").select("org_id").eq("id", user.id).single()
 
-  let plan = "free"
-  if (userData?.org_id) {
-    const { data: org } = await supabase
-      .from("organizations")
-      .select("plan")
-      .eq("id", userData.org_id)
-      .single()
-    plan = normalizePlan(org?.plan)
-  }
-  const monthlyLimit = getEffectiveMonthlyDocLimit(plan, user.id, user.email)
-  if (monthlyLimit != null) {
-    const used = await countMonthlyQuotaDocuments(supabase, {
-      orgId: userData?.org_id ?? null,
-      userId: user.id,
-    })
-    if (used >= monthlyLimit) {
-      return NextResponse.json(
-        { error: `Monthly upload limit reached for ${plan} plan (${monthlyLimit} documents).` },
-        { status: 403 }
-      )
-    }
+  const limitMsg = await uploadPlanLimitMessageIfExceeded(
+    supabase,
+    user.id,
+    userData?.org_id ?? null,
+    user.email,
+    messages
+  )
+  if (limitMsg) {
+    return NextResponse.json({ error: limitMsg }, { status: 403 })
   }
 
-  const formData = await req.formData()
+  let formData: FormData
+  try {
+    formData = await req.formData()
+  } catch {
+    return NextResponse.json({ error: e.bodyTruncated }, { status: 400 })
+  }
+
   const file = formData.get("file") as File | null
 
   if (!file) {
-    return NextResponse.json({ error: "No file provided" }, { status: 400 })
+    return NextResponse.json({ error: e.noFile }, { status: 400 })
   }
 
-  // Validate file type
-  const allowedTypes = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"]
+  if (file.size > UPLOAD_MAX_FILE_BYTES) {
+    return NextResponse.json(
+      { error: interpolate(e.tooLarge, { maxMb: UPLOAD_MAX_FILE_MB }) },
+      { status: 413 }
+    )
+  }
+
+  const allowedTypes = [
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+  ]
   if (!allowedTypes.includes(file.type)) {
-    return NextResponse.json({ error: "Unsupported file type" }, { status: 400 })
+    return NextResponse.json({ error: e.unsupportedType }, { status: 400 })
   }
 
-  // Upload to Supabase Storage
   const fileBuffer = await file.arrayBuffer()
   const filePath = `${user.id}/${Date.now()}-${file.name}`
 
@@ -84,14 +91,22 @@ export async function POST(req: NextRequest) {
     .upload(filePath, fileBuffer, { contentType: file.type })
 
   if (uploadError) {
-    return NextResponse.json({ error: uploadError.message }, { status: 500 })
+    console.error("storage upload:", uploadError)
+    const msg = messageForStorageUploadError(
+      {
+        message: uploadError.message,
+        statusCode: (uploadError as { statusCode?: string }).statusCode,
+      },
+      e
+    )
+    const status = (uploadError as { statusCode?: string }).statusCode === "413" ? 413 : 500
+    return NextResponse.json({ error: msg }, { status })
   }
 
-  const { data: { publicUrl } } = supabase.storage
-    .from("contracts")
-    .getPublicUrl(filePath)
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("contracts").getPublicUrl(filePath)
 
-  // Create document record
   const { data: document, error: dbError } = await supabase
     .from("documents")
     .insert({
@@ -107,31 +122,36 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 })
+    console.error("documents insert:", dbError)
+    return NextResponse.json({ error: e.saveFailed }, { status: 500 })
   }
 
-  // Record usage
   if (userData?.org_id) {
     try {
-      await supabase.rpc("record_document_upload_usage", {
-        p_org_id: userData.org_id,
-        p_user_id: user.id,
-        p_document_id: document.id,
-      }).throwOnError()
+      await supabase
+        .rpc("record_document_upload_usage", {
+          p_org_id: userData.org_id,
+          p_user_id: user.id,
+          p_document_id: document.id,
+        })
+        .throwOnError()
     } catch {
-      // Backward compatibility if migration 009 is not applied yet.
-      await supabase.rpc("record_usage", {
-        p_org_id: userData.org_id,
-        p_event_type: "doc_upload",
-        p_quantity: 1,
-      })
+      try {
+        await supabase.rpc("record_usage", {
+          p_org_id: userData.org_id,
+          p_event_type: "doc_upload",
+          p_quantity: 1,
+        })
+      } catch {
+        /* non-fatal */
+      }
     }
   }
 
-  // Enqueue analysis job (calls FastAPI worker)
+  let enqueueFailed = false
   try {
     const wLocale = localeForWorkerAnalysis(await getLocale())
-    await fetch(`${getWorkerUrl()}/jobs/`, {
+    const res = await fetch(`${getWorkerUrl()}/jobs/`, {
       method: "POST",
       headers: workerAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
@@ -142,10 +162,19 @@ export async function POST(req: NextRequest) {
         locale: wLocale,
       }),
     })
-  } catch (e) {
-    console.error("Failed to enqueue job:", e)
-    // Non-fatal — document is saved, job can be retried
+    if (!res.ok) {
+      const body = await res.text().catch(() => "")
+      console.error("Worker enqueue failed:", res.status, body)
+      enqueueFailed = true
+    }
+  } catch (err) {
+    console.error("Failed to enqueue job:", err)
+    enqueueFailed = true
   }
 
-  return NextResponse.json({ documentId: document.id, fileUrl: publicUrl })
+  return NextResponse.json({
+    documentId: document.id,
+    fileUrl: publicUrl,
+    ...(enqueueFailed ? { enqueueFailed: true } : {}),
+  })
 }

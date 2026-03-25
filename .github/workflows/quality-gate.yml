@@ -92,4 +92,6 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Syntax checks
-        run: python -m py_compile main.py routers/jobs.py services/db.py services/extractor.py
+        run: |
+          python -m py_compile main.py routers/jobs.py services/db.py services/extractor.py \
+            services/chunked_pipeline.py prompts/chunked_extraction.py
