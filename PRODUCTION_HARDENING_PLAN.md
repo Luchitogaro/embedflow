@@ -38,7 +38,7 @@ Status values:
 | 3 | DB tenant integrity constraints | P0 | done | 2 days | `e01fdd1` | Migration 007 applied; null-org sanity 0/0; invalid insert blocked by tenant sync trigger |
 | 4 | Share-link compliance controls | P0/P1 | done | 1 day | `339c038` | Migration 008 applied and verified: create/revoke works; expired links blocked by shared loader |
 | 5 | Billing/usage auditability | P1 | done | 1 day | `TBD (next commit)` | Migration 009 applied and checks passed; upload paths use deduplicated attributable RPC (fallback-safe) |
-| 6 | Security + a11y + E2E quality gate | P1 | in_progress | 2 days | - | Start with automated quality-gate workflow (typecheck, build, a11y audit) |
+| 6 | Security + a11y + E2E quality gate | P1 | in_progress | 2 days | - | Added CI workflow: `.github/workflows/quality-gate.yml` (web lint/typecheck/build/a11y + worker syntax) |
 | 7 | Go-live operations and runbooks | P0 | todo | 1 day | - | - |
 
 ---
@@ -215,3 +215,4 @@ Usage accounting needs stronger auditability and consistency checks.
 - 2026-03-25: Phase 5 implementation started with attributable usage columns (`user_id`, `document_id`), dedup index, and RPC migration plus backward-compatible API/action usage calls.
 - 2026-03-25: Phase 5 closed as done after DB verification checks passed (columns/index/function present; duplicate detector clean).
 - 2026-03-25: Phase 6 started with focus on automated quality-gate execution.
+- 2026-03-25: Added CI quality-gate workflow for web and worker checks on push/PR.
