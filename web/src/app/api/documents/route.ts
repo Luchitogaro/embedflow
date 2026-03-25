@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { getLocale } from "@/lib/i18n/server"
+import { localeForWorkerAnalysis } from "@/lib/worker-locale"
+import { normalizePlan } from "@/lib/plan-limits"
+import { countMonthlyQuotaDocuments, getEffectiveMonthlyDocLimit } from "@/lib/monthly-upload-quota"
+import { getWorkerUrl, workerAuthHeaders } from "@/lib/worker-auth"
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -33,6 +38,29 @@ export async function POST(req: NextRequest) {
     .select("org_id")
     .eq("id", user.id)
     .single()
+
+  let plan = "free"
+  if (userData?.org_id) {
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("plan")
+      .eq("id", userData.org_id)
+      .single()
+    plan = normalizePlan(org?.plan)
+  }
+  const monthlyLimit = getEffectiveMonthlyDocLimit(plan, user.id, user.email)
+  if (monthlyLimit != null) {
+    const used = await countMonthlyQuotaDocuments(supabase, {
+      orgId: userData?.org_id ?? null,
+      userId: user.id,
+    })
+    if (used >= monthlyLimit) {
+      return NextResponse.json(
+        { error: `Monthly upload limit reached for ${plan} plan (${monthlyLimit} documents).` },
+        { status: 403 }
+      )
+    }
+  }
 
   const formData = await req.formData()
   const file = formData.get("file") as File | null
@@ -93,14 +121,16 @@ export async function POST(req: NextRequest) {
 
   // Enqueue analysis job (calls FastAPI worker)
   try {
-    await fetch(`${process.env.WORKER_URL || "http://localhost:8000"}/jobs/`, {
+    const wLocale = localeForWorkerAnalysis(await getLocale())
+    await fetch(`${getWorkerUrl()}/jobs/`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: workerAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         document_id: document.id,
         file_url: publicUrl,
         user_id: user.id,
         org_id: userData?.org_id,
+        locale: wLocale,
       }),
     })
   } catch (e) {

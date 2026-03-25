@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { getLocale } from "@/lib/i18n/server"
+import { localeForWorkerAnalysis } from "@/lib/worker-locale"
+import { getWorkerUrl, workerAuthHeaders } from "@/lib/worker-auth"
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -28,7 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Enqueue job with FastAPI worker
-  const workerUrl = process.env.WORKER_URL || "http://localhost:8000"
+  const workerUrl = getWorkerUrl()
   const { data: userData } = await supabase
     .from("users")
     .select("org_id")
@@ -36,19 +39,36 @@ export async function POST(req: NextRequest) {
     .single()
 
   try {
+    const wLocale = localeForWorkerAnalysis(await getLocale())
     const response = await fetch(`${workerUrl}/jobs/`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: workerAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         document_id: documentId,
         file_url: document.file_url,
         user_id: user.id,
         org_id: userData?.org_id,
+        locale: wLocale,
       }),
     })
+
+    if (!response.ok) {
+      const errorPayload = await response.json().catch(() => ({}))
+      return NextResponse.json(
+        { error: errorPayload?.detail || "Failed to enqueue analysis job" },
+        { status: response.status }
+      )
+    }
+
+    await supabase
+      .from("documents")
+      .update({ status: "pending", error_message: null })
+      .eq("id", documentId)
+      .eq("user_id", user.id)
+
     const data = await response.json()
     return NextResponse.json({ jobId: data.job_id, status: "queued" })
-  } catch (e) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to enqueue analysis job" },
       { status: 500 }

@@ -31,7 +31,13 @@ def _get_redis():
 redis_client = _get_redis() if USE_REDIS else None
 
 
-async def enqueue_job(document_id: str, file_url: str, user_id: str, org_id: str | None) -> str:
+async def enqueue_job(
+    document_id: str,
+    file_url: str,
+    user_id: str,
+    org_id: str | None,
+    locale: str = "en",
+) -> str:
     """Add a document analysis job to the queue."""
     job_id = str(uuid.uuid4())
     job_data = {
@@ -40,6 +46,7 @@ async def enqueue_job(document_id: str, file_url: str, user_id: str, org_id: str
         "file_url": file_url,
         "user_id": user_id,
         "org_id": org_id,
+        "locale": locale,
         "status": "queued",
         "created_at": datetime.utcnow().isoformat(),
     }
@@ -102,6 +109,7 @@ async def process_next_job() -> bool:
             document_id=job["document_id"],
             file_url=job["file_url"],
             user_id=job["user_id"],
+            locale=job.get("locale") or "en",
         )
         job["status"] = "done"
         job["result"] = result

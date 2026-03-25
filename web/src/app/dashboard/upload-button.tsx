@@ -2,11 +2,14 @@
 
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { Upload, Loader2, CheckCircle2, AlertCircle } from "lucide-react"
+import { Upload, Loader2, CheckCircle2 } from "lucide-react"
 import { uploadDocument } from "@/app/actions/upload"
 import { cn } from "@/lib/utils"
+import type { Messages } from "@/messages/en"
 
-export function UploadButton() {
+type UploadCopy = Messages["dashboard"]["upload"]
+
+export function UploadButton({ upload }: { upload: UploadCopy }) {
   const router = useRouter()
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -21,13 +24,18 @@ export function UploadButton() {
       const formData = new FormData()
       formData.append("file", file)
       const result = await uploadDocument(formData)
+      if ("error" in result) {
+        setError(result.error)
+        setUploading(false)
+        return
+      }
       setDone(true)
       setTimeout(() => {
         setDone(false)
         router.push(`/dashboard/documents/${result.documentId}`)
       }, 1200)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed")
+      setError(err instanceof Error ? err.message : upload.failed)
       setUploading(false)
     }
   }
@@ -44,13 +52,14 @@ export function UploadButton() {
       }}
       className={cn(
         "relative flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200",
-        dragging ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50",
+        dragging ? "border-blue-500 bg-primary/10" : "border-border hover:border-border hover:bg-muted/40",
         uploading && "opacity-60 pointer-events-none"
       )}
     >
       <input
         ref={inputRef}
         type="file"
+        aria-label={upload.click}
         accept=".pdf,.docx,.doc,.txt"
         onChange={(e) => {
           const file = e.target.files?.[0]
@@ -62,34 +71,34 @@ export function UploadButton() {
 
       {uploading && !done && (
         <>
-          <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-3" />
-          <p className="text-sm font-medium text-slate-700">Uploading & analyzing...</p>
-          <p className="text-xs text-slate-500 mt-1">This takes about 10-20 seconds</p>
+          <Loader2 className="w-10 h-10 text-primary animate-spin mb-3" />
+          <p className="text-sm font-medium text-foreground">{upload.uploading}</p>
+          <p className="text-xs text-muted-foreground mt-1">{upload.uploadSub}</p>
         </>
       )}
 
       {done && (
         <>
           <CheckCircle2 className="w-10 h-10 text-green-500 mb-3" />
-          <p className="text-sm font-medium text-green-700">Analysis complete!</p>
-          <p className="text-xs text-slate-500 mt-1">Redirecting to results...</p>
+          <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">{upload.doneTitle}</p>
+          <p className="text-xs text-muted-foreground mt-1">{upload.doneSub}</p>
         </>
       )}
 
       {!uploading && !done && (
         <>
-          <div className="p-3 bg-blue-100 rounded-full mb-3">
-            <Upload className="w-8 h-8 text-blue-600" />
+          <div className="p-3 bg-primary/15 rounded-full mb-3">
+            <Upload className="w-8 h-8 text-primary" />
           </div>
-          <p className="text-sm font-semibold text-slate-700">
-            {dragging ? "Drop your contract here" : "Drag & drop or click to upload"}
+          <p className="text-sm font-semibold text-foreground">
+            {dragging ? upload.drop : upload.click}
           </p>
-          <p className="text-xs text-slate-500 mt-1">PDF, DOCX, or TXT — up to 10MB</p>
+          <p className="text-xs text-muted-foreground mt-1">{upload.fileTypes}</p>
         </>
       )}
 
       {error && (
-        <p className="absolute bottom-4 text-sm text-red-500 bg-red-50 px-3 py-1.5 rounded-lg">
+        <p className="absolute bottom-4 text-sm text-destructive bg-destructive/10 px-3 py-1.5 rounded-lg">
           {error}
         </p>
       )}

@@ -1,66 +1,50 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { revalidatePath } from "next/cache"
+import { normalizePlan } from "@/lib/plan-limits"
+import { ensureUserAndOrg } from "@/lib/ensure-user-org"
+import { countMonthlyQuotaDocuments, getEffectiveMonthlyDocLimit } from "@/lib/monthly-upload-quota"
+import { getLocale } from "@/lib/i18n/server"
+import { localeForWorkerAnalysis } from "@/lib/worker-locale"
+import { getWorkerUrl, workerAuthHeaders } from "@/lib/worker-auth"
 
-async function ensureUserAndOrg(userId: string, userEmail: string) {
-  const supabase = await createClient()
+async function planLimitErrorIfExceeded(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  orgId: string | null,
+  email: string | null | undefined
+): Promise<string | null> {
+  let plan = "free"
+  if (orgId) {
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("plan")
+      .eq("id", orgId)
+      .single()
+    plan = normalizePlan(org?.plan)
+  }
 
-  // Check if user record exists
-  const { data: existingUser } = await supabase
-    .from("users")
-    .select("id, org_id")
-    .eq("id", userId)
-    .single()
+  const monthlyLimit = getEffectiveMonthlyDocLimit(plan, userId, email)
+  if (monthlyLimit == null) return null
 
-  if (existingUser) return existingUser
-
-  // Need service role to bypass RLS for initial user+org creation
-  const serviceUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-  if (!serviceKey) throw new Error("SUPABASE_SERVICE_ROLE_KEY not configured")
-
-  const adminClient = createSupabaseClient(serviceUrl, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  })
-
-  // Create org for user
-  const orgName = userEmail ? `${userEmail.split("@")[0]}'s Org` : "My Organization"
-  const { data: org, error: orgError } = await adminClient
-    .from("organizations")
-    .insert({ name: orgName, plan: "free" })
-    .select()
-    .single()
-
-  if (orgError) throw new Error(`Failed to create org: ${orgError.message}`)
-
-  // Create user record
-  const { data: newUser, error: userError } = await adminClient
-    .from("users")
-    .insert({
-      id: userId,
-      email: userEmail,
-      org_id: org.id,
-      role: "owner",
-    })
-    .select()
-    .single()
-
-  if (userError) throw new Error(`Failed to create user record: ${userError.message}`)
-
-  return { id: newUser.id, org_id: newUser.org_id }
+  const used = await countMonthlyQuotaDocuments(supabase, { orgId, userId })
+  if (used >= monthlyLimit) {
+    return `Monthly upload limit reached for ${plan} plan (${monthlyLimit} documents).`
+  }
+  return null
 }
 
-export async function uploadDocument(formData: FormData): Promise<{ documentId: string }> {
+export type UploadDocumentResult = { documentId: string } | { error: string }
+
+export async function uploadDocument(formData: FormData): Promise<UploadDocumentResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) throw new Error("Unauthorized")
+  if (!user) return { error: "Unauthorized" }
 
   const file = formData.get("file") as File | null
-  if (!file) throw new Error("No file provided")
+  if (!file) return { error: "No file provided" }
 
   const allowedTypes = [
     "application/pdf",
@@ -71,6 +55,8 @@ export async function uploadDocument(formData: FormData): Promise<{ documentId: 
 
   // Ensure user + org exist in public schema
   const userData = await ensureUserAndOrg(user.id, user.email ?? "")
+  const limitErr = await planLimitErrorIfExceeded(supabase, user.id, userData.org_id, user.email)
+  if (limitErr) return { error: limitErr }
 
   // Upload to Supabase Storage (using user's anon key - RLS allows own files)
   const fileBuffer = await file.arrayBuffer()
@@ -116,14 +102,16 @@ export async function uploadDocument(formData: FormData): Promise<{ documentId: 
 
   // Enqueue worker job (fire-and-forget)
   try {
-    await fetch(`${process.env.WORKER_URL || "http://localhost:8000"}/jobs/`, {
+    const wLocale = localeForWorkerAnalysis(await getLocale())
+    await fetch(`${getWorkerUrl()}/jobs/`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: workerAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         document_id: document.id,
         file_url: publicUrl,
         user_id: user.id,
         org_id: userData.org_id,
+        locale: wLocale,
       }),
     })
   } catch (e) {

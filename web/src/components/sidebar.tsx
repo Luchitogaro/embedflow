@@ -2,34 +2,64 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, FileText, Settings, CreditCard, Zap } from "lucide-react"
+import { LayoutDashboard, FileText, Settings, CreditCard, Zap, Plug } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { LanguageSwitcher } from "@/components/language-switcher"
+import { LogoutButton } from "@/components/logout-button"
+import { ThemeToggle } from "@/components/theme-toggle"
+import type { Locale } from "@/lib/i18n/config"
+import type { Messages } from "@/messages/en"
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/documents", label: "Documents", icon: FileText },
-  { href: "/settings/billing", label: "Billing", icon: CreditCard },
-  { href: "/settings", label: "Settings", icon: Settings },
-]
+function navItemActive(pathname: string, href: string): boolean {
+  if (href === "/dashboard") return pathname === "/dashboard"
+  if (href === "/dashboard/settings") return pathname === "/dashboard/settings"
+  if (href === "/dashboard/settings/integrations") {
+    return pathname.startsWith("/dashboard/settings/integrations")
+  }
+  return pathname === href || pathname.startsWith(`${href}/`)
+}
 
-export function Sidebar() {
+type SidebarProps = {
+  displayName: string
+  email: string
+  planLabel: string
+  nav: Messages["nav"]
+  locale: Locale
+  language: Messages["language"]
+  theme: Messages["theme"]
+}
+
+export function Sidebar({ displayName, email, planLabel, nav, locale, language, theme }: SidebarProps) {
   const pathname = usePathname()
 
+  const navItems = [
+    { href: "/dashboard", label: nav.dashboard, icon: LayoutDashboard },
+    { href: "/dashboard/documents", label: nav.documents, icon: FileText },
+    { href: "/dashboard/settings/billing", label: nav.billing, icon: CreditCard },
+    { href: "/dashboard/settings/integrations", label: nav.integrations, icon: Plug },
+    { href: "/dashboard/settings", label: nav.settings, icon: Settings },
+  ]
+
   return (
-    <aside className="w-64 h-screen bg-[#0A1628] text-white flex flex-col fixed left-0 top-0">
-      <div className="p-6">
-        <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="p-1.5 bg-blue-500 rounded-lg">
+    <aside className="no-print hidden md:flex w-64 h-screen bg-[#0A1628] text-white flex-col fixed left-0 top-0 z-30">
+      <div className="p-6 flex items-start justify-between gap-2">
+        <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
+          <div className="p-1.5 bg-blue-500 rounded-lg shrink-0">
             <Zap className="w-5 h-5 text-white" />
           </div>
-          <span className="text-lg font-bold tracking-tight">Embedflow</span>
+          <span className="text-lg font-bold tracking-tight truncate">Embedflow</span>
         </Link>
+      </div>
+
+      <div className="space-y-2 px-6 pb-2">
+        <ThemeToggle copy={theme} variant="dark" />
+        <LanguageSwitcher locale={locale} language={language} variant="dark" />
       </div>
 
       <nav className="flex-1 px-3">
         {navItems.map((item) => {
           const Icon = item.icon
-          const isActive = pathname === item.href || pathname.startsWith(item.href)
+          const isActive = navItemActive(pathname, item.href)
           return (
             <Link
               key={item.href}
@@ -48,16 +78,18 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-white/10">
+      <div className="p-4 border-t border-white/10 space-y-3">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-xs font-bold">
-            U
+            {displayName.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">User</p>
-            <p className="text-xs text-slate-400 truncate">Free plan</p>
+            <p className="text-sm font-medium truncate">{displayName}</p>
+            <p className="text-xs text-slate-400 truncate">{planLabel}</p>
+            <p className="text-xs text-slate-500 truncate">{email}</p>
           </div>
         </div>
+        <LogoutButton label={nav.logOut} variant="sidebar" />
       </div>
     </aside>
   )

@@ -1,240 +1,241 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { Upload, Shield, Mic, Zap, ArrowRight, Check, FileText, AlertTriangle } from "lucide-react"
+import {
+  Upload,
+  ShieldAlert,
+  Zap,
+  ArrowRight,
+  Check,
+  ClipboardList,
+  Share2,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { LanguageSwitcher } from "@/components/language-switcher"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { getMessagesForRequest } from "@/lib/i18n/server"
 
-const features = [
-  {
-    icon: Upload,
-    title: "Drag & Drop Upload",
-    description: "Upload PDF, DOCX, or paste text. No formatting required — AI handles it all.",
-  },
-  {
-    icon: FileText,
-    title: "Key Term Extraction",
-    description: "Instantly identifies parties, dates, pricing, renewal clauses, SLAs, and liability terms.",
-  },
-  {
-    icon: AlertTriangle,
-    title: "Risk Flagging",
-    description: "Red/yellow/green indicators on problematic clauses with plain-English explanations.",
-  },
-  {
-    icon: Mic,
-    title: "10-Second Pitch",
-    description: "One-click generation of a verbal summary you can use in your next deal review.",
-  },
-]
-
-const testimonials = [
-  {
-    quote: "I used to spend 2 hours reading contracts before calls. Now I get the full picture in 30 seconds.",
-    name: "Sarah Chen",
-    title: "Account Executive, TechScale",
-    metric: "2hrs saved per contract",
-  },
-  {
-    quote: "Caught an unlimited liability clause that my previous tool missed completely. This paid for itself in one deal.",
-    name: "Marcus Rivera",
-    title: "Sales Director, CloudOps",
-    metric: "$180K deal protected",
-  },
-  {
-    quote: "Finally something that actually understands SaaS contracts. The pitch feature is genius.",
-    name: "Priya Patel",
-    title: "VP Sales, DataFlow",
-    metric: "3 deals closed faster",
-  },
-]
-
-const faqs = [
-  { q: "Is my contract data used for training?", a: "No. Your documents are never used to train AI models. They are processed solely to deliver the analysis you request." },
-  { q: "What contract types do you support?", a: "MSAs, NDAs, SOWs, SaaS agreements, RFPs, procurement contracts, and most standard B2B contract formats." },
-  { q: "How accurate is the analysis?", a: "Our AI achieves 95%+ accuracy on standard contracts. For unusual or highly complex agreements, we recommend a human legal review as a complement." },
-  { q: "Do I need a credit card to start?", a: "No. The free tier gives you 3 analyses per month with no credit card required." },
-  { q: "Can I integrate with Salesforce or HubSpot?", a: "Yes — Pro and Team plans include full CRM sync with both Salesforce and HubSpot." },
-]
+const featureIcons = [Upload, ClipboardList, ShieldAlert, Share2] as const
 
 export default async function LandingPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { locale, messages } = await getMessagesForRequest()
+  const l = messages.landing
 
-  // If logged in, show the dashboard instead
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (user) {
     redirect("/dashboard")
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Nav */}
-      <nav className="flex items-center justify-between px-8 py-5 border-b border-slate-100">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-blue-500 rounded-lg">
-            <Zap className="w-5 h-5 text-white" />
+    <div className="min-h-screen bg-background text-foreground">
+      <nav className="sticky top-0 z-50 flex items-center justify-between gap-3 border-b border-border bg-background/90 px-4 py-4 backdrop-blur-md sm:px-8">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="shrink-0 rounded-lg bg-primary p-1.5 text-primary-foreground">
+            <Zap className="h-5 w-5" />
           </div>
-          <span className="text-lg font-bold text-[#0A1628]">Embedflow</span>
+          <span className="truncate text-lg font-bold tracking-tight">Embedflow</span>
         </div>
-        <div className="flex items-center gap-4">
-          <Link href="/login">
-            <button className="text-sm text-slate-600 hover:text-slate-900 font-medium">
-              Sign in
-            </button>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
+          <ThemeToggle copy={messages.theme} variant="light" />
+          <LanguageSwitcher locale={locale} language={messages.language} variant="light" />
+          <Link
+            href="/login"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {l.signIn}
           </Link>
           <Link href="/login">
-            <Button size="sm">Start free</Button>
+            <Button size="sm" className="font-semibold shadow-sm">
+              {l.startFree}
+            </Button>
           </Link>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden gradient-animated text-white py-28 px-8">
-        <div className="relative max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 border border-white/20 rounded-full text-sm mb-6 backdrop-blur-sm">
-            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-            Now in public beta — 3 free analyses/month
+      <section className="relative overflow-hidden gradient-animated px-6 py-24 text-white sm:px-8 sm:py-28">
+        <div className="relative mx-auto max-w-4xl text-center">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/95 backdrop-blur-sm sm:text-sm">
+            <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-emerald-400" />
+            {l.badge}
           </div>
-          <h1 className="text-5xl font-bold leading-tight mb-6">
-            Stop reading contracts.<br />
-            <span className="text-blue-400">Start understanding deals.</span>
+          <h1 className="mb-6 text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+            {l.heroLine1}
+            <br />
+            <span className="text-sky-300">{l.heroLine2}</span>
           </h1>
-          <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Embedflow uses AI to extract key terms, flag risk, and generate a 10-second pitch — in under 60 seconds. Built for sales teams who can&apos;t afford to miss the fine print.
+          <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-slate-200 sm:text-xl">
+            {l.heroSub}
           </p>
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
             <Link href="/login">
-              <Button size="lg" className="bg-blue-500 hover:bg-blue-600 text-white px-8 h-12">
-                Start free — no credit card
+              <Button
+                size="lg"
+                className="h-12 border-0 bg-white px-8 font-semibold text-[#0A1628] shadow-lg shadow-black/25 hover:bg-slate-100"
+              >
+                {l.ctaPrimary}
               </Button>
             </Link>
             <Link href="#how-it-works">
-              <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 h-12">
-                See how it works
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-12 border-2 border-white/70 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
+              >
+                {l.ctaSecondary}
               </Button>
             </Link>
           </div>
-          <p className="text-sm text-slate-400 mt-4">3 docs free per month · No credit card required</p>
+          <p className="mt-5 text-sm text-slate-400">{l.heroFootnote}</p>
         </div>
       </section>
 
-      {/* Social proof */}
-      <section className="py-12 border-b border-slate-100">
-        <p className="text-center text-sm text-slate-400 mb-6 font-medium">Trusted by sales teams at</p>
-        <div className="flex items-center justify-center gap-12 flex-wrap">
+      <section className="border-b border-border py-12">
+        <p className="mb-6 text-center text-sm font-medium text-muted-foreground">{l.socialProof}</p>
+        <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3 px-4">
           {["TechScale", "CloudOps", "DataFlow", "Nexus SaaS", "Streamline"].map((name) => (
-            <span key={name} className="text-slate-300 font-bold text-lg">{name}</span>
+            <span key={name} className="text-base font-bold text-foreground/25 sm:text-lg">
+              {name}
+            </span>
           ))}
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="py-24 px-8 max-w-6xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-[#0A1628] mb-4">Everything you need to close faster</h2>
-          <p className="text-slate-500 text-lg max-w-2xl mx-auto">
-            Upload. Analyze. Understand. No legal degree required.
-          </p>
+      <section id="features" className="mx-auto max-w-6xl px-6 py-20 sm:px-8 sm:py-24">
+        <div className="mb-14 text-center">
+          <h2 className="mb-4 text-3xl font-bold tracking-tight">{l.featuresTitle}</h2>
+          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">{l.featuresSub}</p>
         </div>
-        <div className="grid grid-cols-2 gap-6 stagger-children">
-          {features.map((f) => {
-            const Icon = f.icon
+        <div className="stagger-children grid grid-cols-1 gap-6 sm:grid-cols-2">
+          {l.features.map((f, i) => {
+            const Icon = featureIcons[i] ?? ClipboardList
             return (
-              <div key={f.title} className="p-6 rounded-2xl border border-slate-100 hover:border-blue-100 card-hover bg-white">
-                <div className="p-3 bg-blue-50 rounded-xl w-fit mb-4">
-                  <Icon className="w-6 h-6 text-blue-500" />
+              <div
+                key={f.title}
+                className="card-hover rounded-2xl border border-border bg-card p-6 text-card-foreground transition-colors hover:border-primary/25"
+              >
+                <div className="mb-4 w-fit rounded-xl bg-primary/10 p-3 text-primary">
+                  <Icon className="h-6 w-6" />
                 </div>
-                <h3 className="text-lg font-semibold text-[#0A1628] mb-2">{f.title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed">{f.description}</p>
+                <h3 className="mb-2 text-lg font-semibold">{f.title}</h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">{f.description}</p>
               </div>
             )
           })}
         </div>
       </section>
 
-      {/* How it works */}
-      <section id="how-it-works" className="py-24 px-8 bg-slate-50">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold text-[#0A1628] mb-4 text-center">How it works</h2>
-          <p className="text-slate-500 text-center mb-16 max-w-xl mx-auto">
-            Three steps from uploaded contract to deal intelligence.
-          </p>
-          <div className="grid grid-cols-3 gap-8 stagger-children">
-            {[
-              { step: "1", title: "Upload", desc: "Drag & drop your PDF, DOCX, or paste text directly. Takes 5 seconds." },
-              { step: "2", title: "Analyze", desc: "AI reads every clause — extracts terms, flags risk, identifies red flags." },
-              { step: "3", title: "Understand", desc: "Get a structured analysis, risk summary, and a 10-second verbal pitch." },
-            ].map((item) => (
-              <div key={item.step} className="text-center">
-                <div className="w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
-                  {item.step}
+      <section id="how-it-works" className="bg-muted/50 px-6 py-20 dark:bg-muted/20 sm:px-8 sm:py-24">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="mb-4 text-center text-3xl font-bold tracking-tight">{l.howTitle}</h2>
+          <p className="mx-auto mb-14 max-w-xl text-center text-muted-foreground">{l.howSub}</p>
+          <div className="stagger-children grid grid-cols-1 gap-10 sm:grid-cols-3 sm:gap-8">
+            {l.howSteps.map((item, index) => (
+              <div key={item.title} className="text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-base font-bold text-primary-foreground shadow-md shadow-primary/30">
+                  {String(index + 1)}
                 </div>
-                <h3 className="text-lg font-semibold text-[#0A1628] mb-2">{item.title}</h3>
-                <p className="text-slate-500 text-sm">{item.desc}</p>
+                <h3 className="mb-2 text-lg font-semibold">{item.title}</h3>
+                <p className="text-sm text-muted-foreground">{item.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-24 px-8 max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold text-[#0A1628] mb-12 text-center">Loved by sales teams</h2>
-        <div className="grid grid-cols-3 gap-6 stagger-children">
-          {testimonials.map((t) => (
-            <div key={t.name} className="p-6 rounded-2xl border border-slate-100 bg-white card-hover">
-              <p className="text-slate-700 text-sm leading-relaxed mb-4">&quot;{t.quote}&quot;</p>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+      <section className="mx-auto max-w-6xl px-6 py-20 sm:px-8 sm:py-24">
+        <h2 className="mb-12 text-center text-3xl font-bold tracking-tight">{l.testimonialsTitle}</h2>
+        <div className="stagger-children grid grid-cols-1 gap-6 md:grid-cols-3">
+          {l.testimonials.map((t) => (
+            <div
+              key={t.name}
+              className="card-hover rounded-2xl border border-border bg-card p-6 text-card-foreground"
+            >
+              <p className="mb-4 text-sm leading-relaxed text-muted-foreground">&quot;{t.quote}&quot;</p>
+              <div className="mb-2 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 text-xs font-bold text-white">
                   {t.name[0]}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-slate-900">{t.name}</p>
-                  <p className="text-xs text-slate-500">{t.title}</p>
+                  <p className="text-sm font-medium">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.title}</p>
                 </div>
               </div>
-              <div className="inline-flex items-center gap-1 text-xs text-green-600 font-semibold bg-green-50 px-2 py-1 rounded">
-                <Check className="w-3 h-3" /> {t.metric}
+              <div className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">
+                <Check className="h-3 w-3" /> {t.metric}
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="py-24 px-8 bg-slate-50">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold text-[#0A1628] mb-4 text-center">Simple, transparent pricing</h2>
-          <p className="text-slate-500 text-center mb-12">Start free. Upgrade when you need more.</p>
-          <div className="grid grid-cols-4 gap-4 stagger-children">
-            {[
-              { name: "Free", price: "$0", highlight: false, badge: null, features: ["3 docs/month", "Basic extraction", "Risk flags", "Email support"] },
-              { name: "Starter", price: "$29", highlight: false, badge: "Most popular", per: "/user/mo", features: ["20 docs/month", "Full extraction", "Risk flags", "Pitch generator", "Email support"] },
-              { name: "Pro", price: "$49", highlight: true, badge: null, per: "/user/mo", features: ["Unlimited docs", "CRM sync (SF + HubSpot)", "Slack alerts", "Priority AI", "API access"] },
-              { name: "Team", price: "$149", highlight: false, badge: null, per: "/month", features: ["5 seats", "Org dashboard", "Custom risk rules", "SSO", "Dedicated support"] },
-            ].map((plan) => (
-              <div key={plan.name} className={`p-6 rounded-2xl ${plan.highlight ? "bg-[#0A1628] text-white glow-blue" : "bg-white border border-slate-200"}`}>
+      <section id="pricing" className="bg-muted/50 px-6 py-20 dark:bg-muted/20 sm:px-8 sm:py-24">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="mb-4 text-center text-3xl font-bold tracking-tight">{l.pricingTitle}</h2>
+          <p className="mb-12 text-center text-muted-foreground">{l.pricingSub}</p>
+          <div className="stagger-children grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {l.pricingPlans.map((plan) => (
+              <div
+                key={plan.name}
+                className={
+                  plan.highlight
+                    ? "glow-blue rounded-2xl border border-primary/40 bg-primary p-6 text-primary-foreground shadow-lg shadow-primary/20"
+                    : "rounded-2xl border border-border bg-card p-6 text-card-foreground"
+                }
+              >
                 {plan.badge && (
-                  <span className="inline-block text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full mb-3">
+                  <span
+                    className={
+                      plan.highlight
+                        ? "mb-3 inline-block rounded-full bg-white/15 px-2 py-0.5 text-xs font-semibold text-white"
+                        : "mb-3 inline-block rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary"
+                    }
+                  >
                     {plan.badge}
                   </span>
                 )}
-                <h3 className="text-lg font-bold mb-1">{plan.name}</h3>
+                <h3 className="mb-1 text-lg font-bold">{plan.name}</h3>
                 <div className="mb-4">
                   <span className="text-3xl font-bold">{plan.price}</span>
-                  <span className="text-sm text-slate-400">{plan.per || "/month"}</span>
+                  <span
+                    className={
+                      plan.highlight ? "text-sm text-primary-foreground/75" : "text-sm text-muted-foreground"
+                    }
+                  >
+                    {plan.per}
+                  </span>
                 </div>
-                <ul className="space-y-2 mb-6">
+                <ul className="mb-6 space-y-2">
                   {plan.features.map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-sm">
-                      <Check className={`w-4 h-4 ${plan.highlight ? "text-blue-400" : "text-green-500"}`} />
-                      <span className={plan.highlight ? "text-slate-300" : "text-slate-600"}>{f}</span>
+                    <li key={f} className="flex items-start gap-2 text-sm">
+                      <Check
+                        className={
+                          plan.highlight
+                            ? "mt-0.5 h-4 w-4 shrink-0 text-sky-200"
+                            : "mt-0.5 h-4 w-4 shrink-0 text-primary"
+                        }
+                      />
+                      <span className={plan.highlight ? "text-primary-foreground/90" : "text-muted-foreground"}>
+                        {f}
+                      </span>
                     </li>
                   ))}
                 </ul>
-                <Link href="/login">
-                  <button className={`w-full ${plan.highlight ? "bg-blue-500 hover:bg-blue-600 text-white" : "border border-slate-200 hover:bg-slate-50"} rounded-lg px-4 py-2 text-sm font-medium transition-colors`}>
-                    {plan.price === "$0" ? "Start free" : "Get started"}
-                  </button>
+                <Link href="/login" className="block">
+                  <Button
+                    size="sm"
+                    className={
+                      plan.highlight
+                        ? "h-9 w-full border-0 bg-white font-semibold text-[#0A1628] hover:bg-slate-100"
+                        : "h-9 w-full font-semibold"
+                    }
+                    variant={plan.highlight ? "default" : "outline"}
+                  >
+                    {plan.cta}
+                  </Button>
                 </Link>
               </div>
             ))}
@@ -242,42 +243,42 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* FAQ */}
-      <section className="py-24 px-8 max-w-3xl mx-auto">
-        <h2 className="text-3xl font-bold text-[#0A1628] mb-12 text-center">Frequently asked questions</h2>
+      <section className="mx-auto max-w-3xl px-6 py-20 sm:px-8 sm:py-24">
+        <h2 className="mb-12 text-center text-3xl font-bold tracking-tight">{l.faqTitle}</h2>
         <div className="space-y-4">
-          {faqs.map((faq) => (
-            <div key={faq.q} className="p-5 rounded-xl border border-slate-100">
-              <h3 className="font-semibold text-[#0A1628] mb-2">{faq.q}</h3>
-              <p className="text-slate-500 text-sm leading-relaxed">{faq.a}</p>
+          {l.faqs.map((faq) => (
+            <div key={faq.q} className="rounded-xl border border-border bg-card p-5">
+              <h3 className="mb-2 font-semibold">{faq.q}</h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">{faq.a}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-24 px-8 gradient-animated text-white text-center">
-        <div className="max-w-2xl mx-auto">
-          <h2 className="text-4xl font-bold mb-4">Start understanding your deals today.</h2>
-          <p className="text-slate-300 text-lg mb-8">3 free analyses per month. No credit card. Cancel anytime.</p>
+      <section className="gradient-animated px-6 py-24 text-center text-white sm:px-8">
+        <div className="mx-auto max-w-2xl">
+          <h2 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">{l.ctaTitle}</h2>
+          <p className="mb-8 text-lg text-slate-200">{l.ctaSub}</p>
           <Link href="/login">
-            <button className="inline-flex items-center gap-2 bg-white text-[#0A1628] hover:bg-slate-100 px-10 h-14 text-base font-semibold rounded-lg transition-colors">
-              Get started free <ArrowRight className="w-5 h-5" />
-            </button>
+            <Button
+              size="lg"
+              className="inline-flex h-14 items-center gap-2 border-0 bg-white px-10 font-semibold text-[#0A1628] shadow-lg shadow-black/25 hover:bg-slate-100"
+            >
+              {l.ctaButton} <ArrowRight className="h-5 w-5" />
+            </Button>
           </Link>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-100 py-8 px-8">
-        <div className="flex items-center justify-between max-w-6xl mx-auto">
+      <footer className="border-t border-border px-6 py-8 sm:px-8">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="p-1 bg-blue-500 rounded">
-              <Zap className="w-4 h-4 text-white" />
+            <div className="rounded bg-primary p-1 text-primary-foreground">
+              <Zap className="h-4 w-4" />
             </div>
-            <span className="font-bold text-[#0A1628]">Embedflow</span>
+            <span className="font-bold">Embedflow</span>
           </div>
-          <p className="text-sm text-slate-400">© 2026 Embedflow. All rights reserved.</p>
+          <p className="text-sm text-muted-foreground">{l.footerRights}</p>
         </div>
       </footer>
     </div>

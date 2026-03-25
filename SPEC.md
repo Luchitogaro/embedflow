@@ -432,12 +432,18 @@ User              Next.js           Supabase         FastAPI Worker
 - [ ] Developer docs (Mintlify)
 
 ### Phase 4 — Growth (Week 9-12)
-- [ ] Referral program
-- [ ] A/B testing on pricing page
-- [ ] Onboarding flow / product tour
-- [ ] Email drip sequences (rescue abandoned trials)
-- [ ] SOC 2 compliance prep (if enterprise demand)
-- [ ] Multi-language support (ES, FR, DE)
+- [ ] Referral program (placeholder + copy in Settings; formal program TBD)
+- [ ] A/B testing on pricing page (feature-flag approach documented in Settings)
+- [x] Lightweight onboarding (first-visit dashboard banner; dismiss persisted in `localStorage`)
+- [ ] Email drip sequences (rescue abandoned trials) — reuse Resend + `APP_URL` when prioritized
+- [ ] SOC 2 compliance prep (if enterprise demand) — tracked as roadmap note in Settings
+- [x] Multi-language UI: **English, Spanish (ES), Portuguese (Brazil, PT)** via cookie + message files. **FR / DE** remain optional expansions (not committed on the same timeline as ES/PT).
+
+### Recently shipped (high level)
+- **Analysis PDF:** `GET /api/documents/[id]/pdf` generates an official PDF (summary, key points, pitch, risk flags) for completed analyses.
+- **API docs:** `/docs/api` documents health, session auth model, documents CRUD, analyze, share, billing hooks, Stripe webhook, worker contract.
+- **Analysis UX:** step list + labels while status is `pending` / `processing`.
+- **Worker:** configurable OpenAI per-call timeout and retries on transient errors (`OPENAI_MAX_RETRIES`, `OPENAI_CALL_TIMEOUT_SEC`); failed jobs still end in `documents.status = error` (dead-letter behavior at persistence layer).
 
 ---
 

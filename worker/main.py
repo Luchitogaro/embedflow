@@ -6,6 +6,8 @@ AI-powered contract analysis pipeline.
 import os
 import asyncio
 import logging
+from dotenv import load_dotenv
+load_dotenv()
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -58,6 +60,45 @@ async def poll_queue():
     except Exception as e:
         logger.error(f"Poll error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/worker/retry-pending")
+async def retry_pending():
+    """Re-process all documents stuck in pending/processing status. Useful after worker restart."""
+    from services.db import get_client
+    from services.extractor import run_analysis
+    from services.db import update_document_status
+    from services.queue import enqueue_job, _memory_jobs
+    client = get_client()
+
+    # Find stuck documents
+    result = client.table("documents").select("id, file_url, user_id").in_(
+        "status", ["pending", "processing"]
+    ).execute()
+
+    retried = 0
+    for doc in result.data:
+        doc_id = doc["id"]
+        logger.info(f"Retrying stuck document: {doc_id}")
+
+        # Process inline
+        try:
+            await update_document_status(doc_id, "processing")
+            analysis = await run_analysis(
+                document_id=doc_id,
+                file_url=doc["file_url"],
+                user_id=doc["user_id"],
+                locale="en",
+            )
+            await update_document_status(doc_id, "done")
+            logger.info(f"Document {doc_id} analysis complete")
+        except Exception as e:
+            logger.error(f"Document {doc_id} failed: {e}")
+            await update_document_status(doc_id, "error", str(e))
+
+        retried += 1
+
+    return {"retried": retried, "documents": [d["id"] for d in result.data]}
 
 
 if __name__ == "__main__":

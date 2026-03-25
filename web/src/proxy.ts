@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -13,7 +13,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
+          cookiesToSet.forEach(({ name, value }) => {
             request.cookies.set(name, value)
           })
           supabaseResponse = NextResponse.next({ request })
@@ -27,18 +27,15 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Auth pages: redirect logged-in users to dashboard
-  const isAuthPage = request.nextUrl.pathname.startsWith("/login") ||
-                     request.nextUrl.pathname.startsWith("/signup")
+  const isAuthPage =
+    request.nextUrl.pathname.startsWith("/login") ||
+    request.nextUrl.pathname.startsWith("/signup")
 
   if (user && isAuthPage) {
     return NextResponse.redirect(new URL("/", request.url))
   }
 
-  // Protected pages: redirect unauthenticated users to login
-  const isProtectedPage = request.nextUrl.pathname === "/" ||
-                          request.nextUrl.pathname.startsWith("/documents") ||
-                          request.nextUrl.pathname.startsWith("/settings")
+  const isProtectedPage = request.nextUrl.pathname.startsWith("/dashboard")
 
   if (!user && isProtectedPage) {
     return NextResponse.redirect(new URL("/login", request.url))

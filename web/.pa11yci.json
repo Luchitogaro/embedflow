@@ -1,0 +1,14 @@
+{
+  "defaults": {
+    "standard": "WCAG2AA",
+    "timeout": 30000,
+    "wait": 800
+  },
+  "urls": [
+    "http://127.0.0.1:3000/",
+    "http://127.0.0.1:3000/login",
+    "http://127.0.0.1:3000/signup",
+    "http://127.0.0.1:3000/docs/api",
+    "http://127.0.0.1:3000/dashboard"
+  ]
+}
