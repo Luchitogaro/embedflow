@@ -63,6 +63,8 @@ Use when `BILLING_PROVIDER=mercadopago` in the Next.js app (Stripe remains avail
 4. Configure webhook URL `https://your-domain.com/api/webhooks/mercadopago` in Mercado Pago (payment notifications). The handler validates `x-signature` and, on **approved** payments, sets `organizations.plan`, `billing_provider=mercadopago`, and `plan_expires_at` (period access, not Stripe subscriptions).
 5. For local testing, use sandbox credentials and set `MERCADOPAGO_USE_SANDBOX_INIT_POINT=true` so checkout uses `sandbox_init_point`.
 
+Operational checklist (empresa, webhooks, migraciones): see [`docs/PENDING_INTEGRATION.md`](docs/PENDING_INTEGRATION.md).
+
 ### Analysis complete email (worker)
 
 1. Create a [Resend](https://resend.com) API key and verified sender (or use their test domain).
