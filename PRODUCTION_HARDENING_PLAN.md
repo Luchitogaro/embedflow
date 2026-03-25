@@ -1,6 +1,6 @@
 # Embedflow Production Hardening Plan
 
-Last updated: 2026-03-25  
+Last updated: 2026-03-25 (Phase 7 started)  
 Owner: Product + Engineering  
 Scope: Security, multi-tenant isolation, legal/compliance readiness, reliability, and release ops.
 
@@ -38,8 +38,8 @@ Status values:
 | 3 | DB tenant integrity constraints | P0 | done | 2 days | `e01fdd1` | Migration 007 applied; null-org sanity 0/0; invalid insert blocked by tenant sync trigger |
 | 4 | Share-link compliance controls | P0/P1 | done | 1 day | `339c038` | Migration 008 applied and verified: create/revoke works; expired links blocked by shared loader |
 | 5 | Billing/usage auditability | P1 | done | 1 day | `224d0c2` | Migration 009 applied and checks passed; upload paths use deduplicated attributable RPC (fallback-safe) |
-| 6 | Security + a11y + E2E quality gate | P1 | done | 2 days | `f2bc274` | CI: lint/tsc/build/a11y + Playwright (smoke + auth-gate always; authenticated suite when `E2E_USER_EMAIL`/`E2E_USER_PASSWORD`); worker syntax |
-| 7 | Go-live operations and runbooks | P0 | todo | 1 day | - | - |
+| 6 | Security + a11y + E2E quality gate | P1 | done | 2 days | `f2bc274` `ebde961` | CI gate as in `f2bc274`; `ebde961` fixes billing SSR (`planCheckoutState`), auth/documents E2E, next-themes dev overlay noise, optional authenticated suite stability |
+| 7 | Go-live operations and runbooks | P0 | in_progress | 1 day | - | Runbooks: `docs/runbooks/release-checklist.md`, `docs/runbooks/incident-response.md` |
 
 ---
 
@@ -175,6 +175,12 @@ Usage accounting needs stronger auditability and consistency checks.
 - Incident runbooks and rollback procedure.
 - Production release checklist.
 
+**Repo artifacts (baseline):**
+- `docs/runbooks/release-checklist.md` — pre/post deploy checks.
+- `docs/runbooks/incident-response.md` — severity, rollback, monitoring table.
+
+Wire concrete alerts to your hosting/observability provider (not committed here).
+
 ### Acceptance Criteria
 - On-call can execute runbook with no ambiguity.
 - Rollback tested in staging.
@@ -192,7 +198,7 @@ Usage accounting needs stronger auditability and consistency checks.
 - [ ] Share links have expiry/revocation controls
 - [ ] Billing/usage reconciliation passes
 - [x] Security + a11y + E2E gates pass (baseline CI; authenticated suite optional via env)
-- [ ] Monitoring, alerts, and runbooks in place
+- [ ] Monitoring, alerts, and runbooks in place (baseline docs: `docs/runbooks/`)
 - [ ] Staging sign-off completed
 
 ---
@@ -215,3 +221,5 @@ Usage accounting needs stronger auditability and consistency checks.
 - 2026-03-25: Added CI quality-gate workflow for web and worker checks on push/PR.
 - 2026-03-25: Added Playwright smoke test and integrated it into CI quality gate.
 - 2026-03-25: Phase 6 closed (`f2bc274`). Added auth-gate E2E (no session), optional authenticated Playwright setup (`auth.setup.ts` + `authenticated.spec.ts`), CI passthrough for `E2E_USER_*` secrets, and `npm run test:e2e` as the full Playwright entrypoint.
+- 2026-03-25: Phase 6 follow-up (`ebde961`). Billing page: move `planCheckoutState` to server-safe module; relax billing GET path; dev-only filter for React 19 / next-themes script warning; login/documents E2E and smoke isolation fixes; optional authenticated E2E passes with real Supabase user.
+- 2026-03-25: Phase 7 started. Added baseline runbooks under `docs/runbooks/` (release checklist + incident response / monitoring table).
