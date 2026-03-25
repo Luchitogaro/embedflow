@@ -37,3 +37,5 @@
 | Supabase | DB connection errors, RLS-related client errors in app logs |
 
 These are baseline ideas; wire them to your observability stack (Datadog, Grafana, Vercel Analytics, Supabase dashboard, etc.).
+
+**Free-tier starting point:** [monitoring-free-tier.md](./monitoring-free-tier.md).

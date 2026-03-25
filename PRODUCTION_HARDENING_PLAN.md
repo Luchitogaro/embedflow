@@ -178,6 +178,7 @@ Usage accounting needs stronger auditability and consistency checks.
 **Repo artifacts (baseline):**
 - `docs/runbooks/release-checklist.md` — pre/post deploy checks.
 - `docs/runbooks/incident-response.md` — severity, rollback, monitoring table.
+- `docs/runbooks/monitoring-free-tier.md` — gratis: uptime (p. ej. UptimeRobot), Stripe/OpenAI dashboards, Sentry opcional.
 
 Wire concrete alerts to your hosting/observability provider (not committed here).
 
@@ -224,3 +225,4 @@ Wire concrete alerts to your hosting/observability provider (not committed here)
 - 2026-03-25: Phase 6 follow-up (`ebde961`). Billing page: move `planCheckoutState` to server-safe module; relax billing GET path; dev-only filter for React 19 / next-themes script warning; login/documents E2E and smoke isolation fixes; optional authenticated E2E passes with real Supabase user.
 - 2026-03-25: Phase 7 started. Added baseline runbooks under `docs/runbooks/` (release checklist + incident response / monitoring table).
 - 2026-03-25: Worker analysis bounds: `OPENAI_MAX_EXTRACTED_CHARS` (`auto` aligns with chunked map coverage via `max_chars_under_chunk_cap`), early truncation before split, release checklist item for OpenAI/chunk env review; `max_chars_under_chunk_cap` shared with `split_text_into_chunks` tail limit.
+- 2026-03-25: Phase 7 ops doc `docs/runbooks/monitoring-free-tier.md` (free monitoring baseline + links); cross-linked from release checklist and incident response.
