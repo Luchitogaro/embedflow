@@ -4,12 +4,11 @@ import { getStripe } from "@/lib/stripe"
 import type { Plan } from "@/lib/plan-limits"
 import { isBillablePlan, stripePriceIdForPlan } from "@/lib/stripe-prices"
 import { ensureUserAndOrg } from "@/lib/ensure-user-org"
+import { getBillingProvider } from "@/lib/billing-config"
+import { createCheckoutPreference } from "@/lib/mercadopago-client"
 
 export async function POST(req: NextRequest) {
-  const stripe = getStripe()
-  if (!stripe) {
-    return NextResponse.json({ error: "Stripe is not configured" }, { status: 503 })
-  }
+  const provider = getBillingProvider()
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -36,13 +35,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid plan" }, { status: 400 })
   }
   const plan = requested as Plan
-  const priceId = stripePriceIdForPlan(plan)
-  if (!priceId) {
-    return NextResponse.json(
-      { error: `Missing Stripe price env for plan: ${plan}` },
-      { status: 503 }
-    )
-  }
 
   const { data: profile } = await supabase
     .from("users")
@@ -68,6 +60,36 @@ export async function POST(req: NextRequest) {
   }
 
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin).replace(/\/$/, "")
+
+  if (provider === "mercadopago") {
+    try {
+      const { redirectUrl } = await createCheckoutPreference({
+        orgId: org.id,
+        plan,
+        payerEmail: user.email,
+        appUrl,
+      })
+      return NextResponse.json({ url: redirectUrl })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Mercado Pago checkout failed"
+      console.error("billing/checkout mercadopago:", e)
+      return NextResponse.json({ error: msg }, { status: 503 })
+    }
+  }
+
+  const stripe = getStripe()
+  if (!stripe) {
+    return NextResponse.json({ error: "Stripe is not configured" }, { status: 503 })
+  }
+
+  const priceId = stripePriceIdForPlan(plan)
+  if (!priceId) {
+    return NextResponse.json(
+      { error: `Missing Stripe price env for plan: ${plan}` },
+      { status: 503 }
+    )
+  }
+
   const successUrl = `${appUrl}/dashboard/settings/billing?checkout=success`
   const cancelUrl = `${appUrl}/dashboard/settings/billing?checkout=cancel`
 

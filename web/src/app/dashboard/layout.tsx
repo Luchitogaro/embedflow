@@ -2,8 +2,9 @@ import { Sidebar } from "@/components/sidebar"
 import { MobileDashboardNav } from "@/components/mobile-dashboard-nav"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { normalizePlan, type Plan } from "@/lib/plan-limits"
+import type { Plan } from "@/lib/plan-limits"
 import { getMessagesForRequest } from "@/lib/i18n/server"
+import { effectiveOrgPlan } from "@/lib/org-plan"
 
 export default async function DashboardLayout({
   children,
@@ -29,10 +30,10 @@ export default async function DashboardLayout({
   if (profile?.org_id) {
     const { data: org } = await supabase
       .from("organizations")
-      .select("plan")
+      .select("plan, plan_expires_at")
       .eq("id", profile.org_id)
       .single()
-    planSlug = normalizePlan(org?.plan)
+    planSlug = effectiveOrgPlan(org?.plan, org?.plan_expires_at)
   }
 
   const displayName = profile?.name?.trim() || user.email?.split("@")[0] || "User"

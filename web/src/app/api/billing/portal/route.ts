@@ -2,8 +2,16 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { getStripe } from "@/lib/stripe"
 import { ensureUserAndOrg } from "@/lib/ensure-user-org"
+import { getBillingProvider } from "@/lib/billing-config"
 
 export async function POST() {
+  if (getBillingProvider() === "mercadopago") {
+    return NextResponse.json(
+      { error: "Billing portal is only available when using Stripe." },
+      { status: 400 }
+    )
+  }
+
   const stripe = getStripe()
   if (!stripe) {
     return NextResponse.json({ error: "Stripe is not configured" }, { status: 503 })

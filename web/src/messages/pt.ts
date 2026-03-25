@@ -438,6 +438,8 @@ export const messagesPt: Messages = {
     title: "Cobrança",
     subtitle: "Gerencie sua assinatura e o uso",
     portalHintSubscribe: "Assine um plano pago para gerenciar a cobrança no portal Stripe.",
+    portalHintMercadoPago:
+      "Checkout Mercado Pago: renove nesta página quando o período pago terminar (sem portal Stripe).",
     portalHintRole: "Somente proprietários e administradores podem gerenciar a cobrança.",
     manageSubscription: "Gerenciar assinatura",
     opening: "Abrindo…",
@@ -450,6 +452,8 @@ export const messagesPt: Messages = {
     usageDocs: "Documentos analisados",
     unlimited: "(ilimitado)",
     currentPlanLabel: "Plano atual",
+    planPaidThroughPrefix: "Acesso pago até",
+    planPaidThroughSuffix: "Renove com o Mercado Pago para manter o plano.",
     currentPlanBadge: "Plano atual",
     plansList: [
       {
@@ -551,9 +555,11 @@ export const messagesPt: Messages = {
     shareHeading: "POST /api/documents/[id]/share",
     shareBody: "Corpo: `{ \"action\": \"create\" | \"revoke\" }` para links de leitura. Requer sessão.",
     billingHeading: "Cobrança",
-    billingBody: "POST /api/billing/checkout e POST /api/billing/portal — Stripe. Requer sessão; portal pode exigir owner/admin conforme a UI.",
+    billingBody:
+      "POST /api/billing/checkout — Stripe Checkout ou URL do Mercado Pago conforme `BILLING_PROVIDER`. POST /api/billing/portal — portal Stripe apenas com Stripe. Requer sessão; owner/admin onde a UI exigir.",
     webhooksHeading: "POST /api/webhooks/stripe",
-    webhooksBody: "Webhook Stripe (assinatura). Não para uso direto do cliente.",
+    webhooksBody:
+      "Webhook Stripe (assinatura). POST /api/webhooks/mercadopago — notificações de pagamento Mercado Pago (`x-signature`). Não para uso direto do cliente.",
     workerHeading: "Worker (FastAPI)",
     workerBody:
       "POST {WORKER_URL}/jobs/ com JSON `{ document_id, file_url, user_id, org_id?, locale? }` é chamado pelo Next após o upload. Proteja WORKER_URL na rede e exija WORKER_SHARED_SECRET; não exponha chaves no navegador.",

@@ -19,6 +19,8 @@ async function syncOrgFromSubscription(
   const admin = createServiceRoleClient()
   const updates: Record<string, string | null> = {
     stripe_customer_id: customerId,
+    billing_provider: "stripe",
+    plan_expires_at: null,
   }
   if (clearSubscription) {
     updates.stripe_subscription_id = null

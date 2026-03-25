@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { normalizePlan, type Plan } from "@/lib/plan-limits"
+import type { Plan } from "@/lib/plan-limits"
 import { countMonthlyQuotaDocuments, getEffectiveMonthlyDocLimit } from "@/lib/monthly-upload-quota"
 import { CheckoutButton, PortalButton } from "./billing-actions"
 import { planCheckoutState } from "./plan-checkout-state"
 import { getMessagesForRequest } from "@/lib/i18n/server"
+import { effectiveOrgPlan } from "@/lib/org-plan"
+import { getBillingProvider } from "@/lib/billing-config"
 
 export default async function BillingPage() {
   const { messages } = await getMessagesForRequest()
@@ -26,16 +28,20 @@ export default async function BillingPage() {
 
   const canManageBilling = ["owner", "admin"].includes(userRow?.role ?? "")
 
+  const billingProvider = getBillingProvider()
+
   let currentPlan: Plan = "free"
   let stripeCustomerId: string | null = null
+  let planExpiresAt: string | null = null
   if (userRow?.org_id) {
     const { data: org } = await supabase
       .from("organizations")
-      .select("plan, stripe_customer_id")
+      .select("plan, stripe_customer_id, plan_expires_at")
       .eq("id", userRow.org_id)
       .single()
-    currentPlan = normalizePlan(org?.plan)
+    currentPlan = effectiveOrgPlan(org?.plan, org?.plan_expires_at)
     stripeCustomerId = org?.stripe_customer_id ?? null
+    planExpiresAt = org?.plan_expires_at ?? null
   }
 
   const monthlyLimit = getEffectiveMonthlyDocLimit(currentPlan, user.id, user.email)
@@ -65,11 +71,15 @@ export default async function BillingPage() {
           <h1 className="text-2xl font-bold text-foreground">{b.title}</h1>
           <p className="text-muted-foreground text-sm mt-1">{b.subtitle}</p>
         </div>
-        {canManageBilling && stripeCustomerId ? (
+        {canManageBilling && stripeCustomerId && billingProvider === "stripe" ? (
           <PortalButton strings={portalStrings} />
         ) : (
           <p className="text-xs text-muted-foreground max-w-xs text-right">
-            {canManageBilling ? b.portalHintSubscribe : b.portalHintRole}
+            {canManageBilling
+              ? billingProvider === "mercadopago"
+                ? b.portalHintMercadoPago
+                : b.portalHintSubscribe
+              : b.portalHintRole}
           </p>
         )}
       </div>
@@ -137,7 +147,7 @@ export default async function BillingPage() {
           <CardTitle className="text-base">{b.usageTitle}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
             <div>
               <p className="text-2xl font-bold text-foreground">
                 {usageLabel}
@@ -150,6 +160,20 @@ export default async function BillingPage() {
               <p className="text-sm text-muted-foreground">{b.currentPlanLabel}</p>
             </div>
           </div>
+          {billingProvider === "mercadopago" && planExpiresAt && currentPlan !== "free" ? (
+            <p className="mt-4 text-xs text-muted-foreground border-t border-border pt-4">
+              {b.planPaidThroughPrefix}{" "}
+              <span className="font-medium text-foreground">
+                {new Date(planExpiresAt).toLocaleDateString(undefined, {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </span>
+              {". "}
+              {b.planPaidThroughSuffix}
+            </p>
+          ) : null}
         </CardContent>
       </Card>
     </div>

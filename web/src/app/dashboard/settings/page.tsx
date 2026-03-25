@@ -5,9 +5,10 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { ProfileForm } from "./profile-form"
 import { SessionTools } from "./session-tools"
-import { normalizePlan, type Plan } from "@/lib/plan-limits"
+import type { Plan } from "@/lib/plan-limits"
 import { ensureUserAndOrg } from "@/lib/ensure-user-org"
 import { getMessagesForRequest } from "@/lib/i18n/server"
+import { effectiveOrgPlan } from "@/lib/org-plan"
 
 export default async function SettingsPage() {
   const { messages } = await getMessagesForRequest()
@@ -29,10 +30,10 @@ export default async function SettingsPage() {
   if (profile?.org_id) {
     const { data: org } = await supabase
       .from("organizations")
-      .select("plan")
+      .select("plan, plan_expires_at")
       .eq("id", profile.org_id)
       .single()
-    planSlug = normalizePlan(org?.plan)
+    planSlug = effectiveOrgPlan(org?.plan, org?.plan_expires_at)
   }
 
   const planKey = planSlug as keyof typeof messages.planLabels

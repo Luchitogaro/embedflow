@@ -435,6 +435,8 @@ export const messagesEn = {
     subtitle: "Manage your subscription and usage",
     portalHintSubscribe:
       "Subscribe to a paid plan to manage billing in the Stripe portal.",
+    portalHintMercadoPago:
+      "Mercado Pago checkout: renew from this page when your paid period ends (no Stripe portal).",
     portalHintRole: "Only organization owners and admins can manage billing.",
     manageSubscription: "Manage subscription",
     opening: "Opening…",
@@ -447,6 +449,8 @@ export const messagesEn = {
     usageDocs: "Documents analyzed",
     unlimited: "(unlimited)",
     currentPlanLabel: "Current plan",
+    planPaidThroughPrefix: "Paid access through",
+    planPaidThroughSuffix: "Renew with Mercado Pago to keep your plan.",
     currentPlanBadge: "Current plan",
     plansList: [
       {
@@ -548,9 +552,11 @@ export const messagesEn = {
     shareHeading: "POST /api/documents/[id]/share",
     shareBody: "Body: `{ \"action\": \"create\" | \"revoke\" }` for share links. Requires session; org role may apply for integrations elsewhere.",
     billingHeading: "Billing",
-    billingBody: "POST /api/billing/checkout and POST /api/billing/portal — Stripe Checkout and Customer Portal. Session required; org owner/admin for portal where enforced in UI.",
+    billingBody:
+      "POST /api/billing/checkout — Stripe Checkout or Mercado Pago redirect URL depending on `BILLING_PROVIDER`. POST /api/billing/portal — Stripe Customer Portal only when using Stripe. Session required; org owner/admin where enforced in UI.",
     webhooksHeading: "POST /api/webhooks/stripe",
-    webhooksBody: "Stripe webhook (signature verification). Not for direct client use.",
+    webhooksBody:
+      "Stripe webhook (signature verification). POST /api/webhooks/mercadopago — Mercado Pago payment notifications (`x-signature`). Not for direct client use.",
     workerHeading: "Worker (FastAPI)",
     workerBody:
       "POST {WORKER_URL}/jobs/ with JSON `{ document_id, file_url, user_id, org_id?, locale? }` is invoked by the Next.js app after upload. Protect WORKER_URL at the network layer and require WORKER_SHARED_SECRET; do not expose keys in the browser.",

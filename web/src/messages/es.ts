@@ -438,6 +438,8 @@ export const messagesEs: Messages = {
     title: "Facturación",
     subtitle: "Gestiona tu suscripción y el uso",
     portalHintSubscribe: "Suscríbete a un plan de pago para gestionar la facturación en el portal de Stripe.",
+    portalHintMercadoPago:
+      "Cobro con Mercado Pago: renueva desde esta página cuando termine el periodo pagado (no hay portal de Stripe).",
     portalHintRole: "Solo propietarios y administradores pueden gestionar la facturación.",
     manageSubscription: "Gestionar suscripción",
     opening: "Abriendo…",
@@ -450,6 +452,8 @@ export const messagesEs: Messages = {
     usageDocs: "Documentos analizados",
     unlimited: "(ilimitado)",
     currentPlanLabel: "Plan actual",
+    planPaidThroughPrefix: "Acceso pagado hasta",
+    planPaidThroughSuffix: "Renueva con Mercado Pago para mantener el plan.",
     currentPlanBadge: "Plan actual",
     plansList: [
       {
@@ -551,9 +555,11 @@ export const messagesEs: Messages = {
     shareHeading: "POST /api/documents/[id]/share",
     shareBody: "Cuerpo: `{ \"action\": \"create\" | \"revoke\" }` para enlaces de lectura. Requiere sesión.",
     billingHeading: "Facturación",
-    billingBody: "POST /api/billing/checkout y POST /api/billing/portal — Stripe. Requiere sesión; el portal puede exigir owner/admin según la UI.",
+    billingBody:
+      "POST /api/billing/checkout — Stripe Checkout o URL de Mercado Pago según `BILLING_PROVIDER`. POST /api/billing/portal — portal de Stripe solo con Stripe. Requiere sesión; owner/admin donde la UI lo exija.",
     webhooksHeading: "POST /api/webhooks/stripe",
-    webhooksBody: "Webhook de Stripe (firma). No para uso directo desde el cliente.",
+    webhooksBody:
+      "Webhook de Stripe (firma). POST /api/webhooks/mercadopago — notificaciones de pago Mercado Pago (`x-signature`). No para uso directo desde el cliente.",
     workerHeading: "Worker (FastAPI)",
     workerBody:
       "POST {WORKER_URL}/jobs/ con JSON `{ document_id, file_url, user_id, org_id?, locale? }` lo invoca Next tras la subida. Protege WORKER_URL en red y exige WORKER_SHARED_SECRET; no expongas claves en el navegador.",

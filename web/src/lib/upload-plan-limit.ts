@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { normalizePlan, type Plan } from "@/lib/plan-limits"
+import type { Plan } from "@/lib/plan-limits"
 import { countMonthlyQuotaDocuments, getEffectiveMonthlyDocLimit } from "@/lib/monthly-upload-quota"
+import { effectiveOrgPlan } from "@/lib/org-plan"
 import { interpolate } from "@/lib/i18n/interpolate"
 import type { Messages } from "@/messages/en"
 
@@ -16,10 +17,10 @@ export async function uploadPlanLimitMessageIfExceeded(
   if (orgId) {
     const { data: org } = await supabase
       .from("organizations")
-      .select("plan")
+      .select("plan, plan_expires_at")
       .eq("id", orgId)
       .single()
-    plan = normalizePlan(org?.plan)
+    plan = effectiveOrgPlan(org?.plan, org?.plan_expires_at)
   }
 
   const monthlyLimit = getEffectiveMonthlyDocLimit(plan, userId, email)

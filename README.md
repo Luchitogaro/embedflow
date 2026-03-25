@@ -53,6 +53,16 @@ If analysis fails with **no selectable text** / **0 chars**, the PDF is likely *
 4. Use the webhook signing secret as `STRIPE_WEBHOOK_SECRET`.
 5. Checkout syncs plan from session **metadata** and, if needed, from the **Stripe Price** IDs you set in env (portal plan changes included).
 
+### Mercado Pago (Colombia / regional billing)
+
+Use when `BILLING_PROVIDER=mercadopago` in the Next.js app (Stripe remains available when `BILLING_PROVIDER=stripe`, the default).
+
+1. Apply migration `010_mercadopago_billing.sql` (adds `billing_provider`, `plan_expires_at` on `organizations`).
+2. Create an app in the [Mercado Pago Developers](https://www.mercadopago.com.co/developers) hub and copy the **production access token** (and webhook **secret** for signature validation).
+3. Set env vars: `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_WEBHOOK_SECRET`, amounts in COP (`MERCADOPAGO_AMOUNT_STARTER`, `MERCADOPAGO_AMOUNT_PRO`, `MERCADOPAGO_AMOUNT_TEAM`), optional `MERCADOPAGO_CURRENCY_ID=COP`, `MERCADOPAGO_PLAN_PERIOD_DAYS` (default 30).
+4. Configure webhook URL `https://your-domain.com/api/webhooks/mercadopago` in Mercado Pago (payment notifications). The handler validates `x-signature` and, on **approved** payments, sets `organizations.plan`, `billing_provider=mercadopago`, and `plan_expires_at` (period access, not Stripe subscriptions).
+5. For local testing, use sandbox credentials and set `MERCADOPAGO_USE_SANDBOX_INIT_POINT=true` so checkout uses `sandbox_init_point`.
+
 ### Analysis complete email (worker)
 
 1. Create a [Resend](https://resend.com) API key and verified sender (or use their test domain).
@@ -63,7 +73,7 @@ If analysis fails with **no selectable text** / **0 chars**, the PDF is likely *
 
 **Slack (optional):** After migration `003`, org owners/admins can set an Incoming Webhook under **Dashboard → Integrations**. The worker posts there when an analysis completes (same `APP_URL` as email links).
 
-**Billing:** the org `plan` in Postgres is derived primarily from **Stripe Price IDs** (`STRIPE_PRICE_STARTER`, etc.). Checkout/session metadata is only a fallback; if metadata and price disagree, the **price wins** (and a warning is logged).
+**Billing:** With **Stripe**, the org `plan` in Postgres is derived primarily from **Stripe Price IDs** (`STRIPE_PRICE_STARTER`, etc.); checkout/session metadata is a fallback. With **Mercado Pago**, the org `plan` and `plan_expires_at` are updated from approved payments via `/api/webhooks/mercadopago`.
 
 ### Environment Variables
 
@@ -71,9 +81,20 @@ If analysis fails with **no selectable text** / **0 chars**, the PDF is likely *
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
+# Billing: stripe (default) | mercadopago
+# BILLING_PROVIDER=stripe
+# MERCADOPAGO_ACCESS_TOKEN=
+# MERCADOPAGO_WEBHOOK_SECRET=
+# MERCADOPAGO_AMOUNT_STARTER=99000
+# MERCADOPAGO_AMOUNT_PRO=199000
+# MERCADOPAGO_AMOUNT_TEAM=599000
+# MERCADOPAGO_CURRENCY_ID=COP
+# MERCADOPAGO_PLAN_PERIOD_DAYS=30
+# MERCADOPAGO_USE_SANDBOX_INIT_POINT=false
 ```
 
 **Worker (.env)**
