@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { randomUUID } from "crypto"
 
+const SHARE_LINK_TTL_DAYS = Math.max(
+  1,
+  Number.parseInt(process.env.SHARE_LINK_TTL_DAYS || "30", 10) || 30
+)
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -40,25 +45,40 @@ export async function POST(
   const action = body.action
 
   if (action === "revoke") {
-    const { error } = await supabase.from("documents").update({ share_token: null }).eq("id", id).eq("user_id", user.id)
+    const { error } = await supabase
+      .from("documents")
+      .update({
+        share_token: null,
+        share_revoked_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .eq("user_id", user.id)
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
-    return NextResponse.json({ shareToken: null })
+    return NextResponse.json({ shareToken: null, shareExpiresAt: null })
   }
 
   if (action === "create") {
     const token = randomUUID()
+    const now = new Date()
+    const expiresAt = new Date(now.getTime() + SHARE_LINK_TTL_DAYS * 24 * 60 * 60 * 1000)
     const { error } = await supabase
       .from("documents")
-      .update({ share_token: token })
+      .update({
+        share_token: token,
+        share_enabled_at: now.toISOString(),
+        share_expires_at: expiresAt.toISOString(),
+        share_revoked_at: null,
+        share_shared_by: user.id,
+      })
       .eq("id", id)
       .eq("user_id", user.id)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
-    return NextResponse.json({ shareToken: token })
+    return NextResponse.json({ shareToken: token, shareExpiresAt: expiresAt.toISOString() })
   }
 
   return NextResponse.json({ error: "Invalid action. Use create or revoke." }, { status: 400 })

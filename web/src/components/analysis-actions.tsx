@@ -27,12 +27,20 @@ type Props = {
   documentId: string
   status: string
   initialShareToken: string | null
+  initialShareExpiresAt?: string | null
   copy: Copy
 }
 
-export function AnalysisActions({ documentId, status, initialShareToken, copy }: Props) {
+export function AnalysisActions({
+  documentId,
+  status,
+  initialShareToken,
+  initialShareExpiresAt = null,
+  copy,
+}: Props) {
   const router = useRouter()
   const [token, setToken] = useState<string | null>(initialShareToken)
+  const [expiresAt, setExpiresAt] = useState<string | null>(initialShareExpiresAt)
   const [busy, setBusy] = useState(false)
   const [pdfBusy, setPdfBusy] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
@@ -48,12 +56,17 @@ export function AnalysisActions({ documentId, status, initialShareToken, copy }:
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       })
-      const data = (await res.json()) as { shareToken?: string | null; error?: string }
+      const data = (await res.json()) as {
+        shareToken?: string | null
+        shareExpiresAt?: string | null
+        error?: string
+      }
       if (!res.ok) {
         setToast(data.error || "Error")
         return
       }
       setToken(data.shareToken ?? null)
+      setExpiresAt(data.shareExpiresAt ?? null)
       router.refresh()
     } finally {
       setBusy(false)
@@ -151,7 +164,10 @@ export function AnalysisActions({ documentId, status, initialShareToken, copy }:
           {pdfBusy ? copy.downloadPdfBusy : copy.downloadPdf}
         </Button>
       </div>
-      <p className="text-xs text-slate-500">{copy.shareHint}</p>
+      <p className="text-xs text-slate-500">
+        {copy.shareHint}
+        {expiresAt ? ` Expires: ${new Date(expiresAt).toLocaleDateString()}.` : ""}
+      </p>
       {toast ? <p className="text-xs text-green-700">{toast}</p> : null}
     </div>
   )

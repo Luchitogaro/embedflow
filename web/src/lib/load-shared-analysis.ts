@@ -24,13 +24,17 @@ export async function loadSharedAnalysisByToken(
     const admin = createServiceRoleClient()
     const { data: doc, error: docError } = await admin
       .from("documents")
-      .select("id, filename, status, created_at, deleted_at, user_id, share_token")
+      .select(
+        "id, filename, status, created_at, deleted_at, user_id, share_token, share_expires_at, share_revoked_at"
+      )
       .eq("share_token", token)
       .maybeSingle()
 
     if (docError || !doc) return null
     if (doc.status !== "done") return null
     if (doc.deleted_at) return null
+    if (doc.share_revoked_at) return null
+    if (doc.share_expires_at && new Date(doc.share_expires_at).getTime() <= Date.now()) return null
 
     const { data: analysis, error: anError } = await admin
       .from("analyses")

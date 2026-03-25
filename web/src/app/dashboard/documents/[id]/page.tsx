@@ -124,6 +124,7 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
     : ""
 
   const shareToken = (doc as { share_token?: string | null }).share_token ?? null
+  const shareExpiresAt = (doc as { share_expires_at?: string | null }).share_expires_at ?? null
 
   const keyTermLabels = {
     yes: t.keyTermYes,
@@ -210,6 +211,7 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
               documentId={id}
               status={doc.status}
               initialShareToken={shareToken}
+              initialShareExpiresAt={shareExpiresAt}
               copy={shareCopy}
             />
           </div>
