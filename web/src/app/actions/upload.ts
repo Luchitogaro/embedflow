@@ -92,12 +92,23 @@ export async function uploadDocument(formData: FormData): Promise<UploadDocument
   // Record usage
   if (userData.org_id) {
     try {
-      await supabase.rpc("record_usage", {
+      await supabase.rpc("record_document_upload_usage", {
         p_org_id: userData.org_id,
-        p_event_type: "doc_upload",
-        p_quantity: 1,
-      })
-    } catch { /* non-fatal */ }
+        p_user_id: user.id,
+        p_document_id: document.id,
+      }).throwOnError()
+    } catch {
+      // Backward compatibility if migration 009 is not applied yet.
+      try {
+        await supabase.rpc("record_usage", {
+          p_org_id: userData.org_id,
+          p_event_type: "doc_upload",
+          p_quantity: 1,
+        })
+      } catch {
+        /* non-fatal */
+      }
+    }
   }
 
   // Enqueue worker job (fire-and-forget)

@@ -112,11 +112,20 @@ export async function POST(req: NextRequest) {
 
   // Record usage
   if (userData?.org_id) {
-    await supabase.rpc("record_usage", {
-      p_org_id: userData.org_id,
-      p_event_type: "doc_upload",
-      p_quantity: 1,
-    })
+    try {
+      await supabase.rpc("record_document_upload_usage", {
+        p_org_id: userData.org_id,
+        p_user_id: user.id,
+        p_document_id: document.id,
+      }).throwOnError()
+    } catch {
+      // Backward compatibility if migration 009 is not applied yet.
+      await supabase.rpc("record_usage", {
+        p_org_id: userData.org_id,
+        p_event_type: "doc_upload",
+        p_quantity: 1,
+      })
+    }
   }
 
   // Enqueue analysis job (calls FastAPI worker)
