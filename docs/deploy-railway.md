@@ -34,7 +34,10 @@ Guía paso a paso para un monorepo con **dos servicios** desde el mismo reposito
 
 Opcionales: `RESEND_*`, modelos OpenAI, límites de chunk (ver `worker/.env.example`).
 
-4. Pestaña **Settings → Networking → Generate domain** (o asigna dominio). Copia la URL base del worker, por ejemplo `https://worker-production-xxxx.up.railway.app`.
+4. Pestaña **Settings → Networking → Generate domain** (o asigna dominio). Si Railway pide **puerto**, indica el mismo puerto en el que escucha el proceso **dentro del contenedor**:
+   - Mira en **Variables** el valor de **`PORT`** (Railway suele inyectar **`8080`** en Docker).
+   - Si no hay `PORT` y el contenedor usa el valor por defecto del Dockerfile, suele ser **`8000`**.
+   - El número del formulario debe coincidir con ese puerto (no uses 80 ni 443 ahí).
 
 5. **Deploy**. Comprueba en el navegador: `https://<tu-worker>.up.railway.app/health` → JSON con `status: healthy`.
 
