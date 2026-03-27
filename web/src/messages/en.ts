@@ -58,11 +58,12 @@ export const messagesEn = {
   landing: {
     signIn: "Sign in",
     startFree: "Start free",
-    badge: "Public beta — 3 free analyses/mo · EN / ES / PT · Share links & PDF export",
+    badge:
+      "Public beta — 3 free analyses/mo · Web dashboard on Free · Integrations & programmatic HTTP API on Pro+",
     heroLine1: "Stop reading contracts.",
     heroLine2: "Start understanding deals.",
     heroSub:
-      "Upload a PDF (or DOCX/TXT), get a structured deal brief—essentials, key points, risk and compliance exposure—and a short verbal pitch. Analysis runs in about a minute, in your language.",
+      "Upload a PDF (or DOCX/TXT), get a structured deal brief—essentials, key points, risk and compliance exposure. Analysis runs in about a minute, in your language. Use everything from the web app on Free; deal pitch from Starter; share links, analysis PDF, Slack, Integrations, and script/curl API access from Pro.",
     ctaPrimary: "Start free — no credit card",
     ctaSecondary: "See how it works",
     heroFootnote: "3 docs free per month · No credit card required",
@@ -86,9 +87,9 @@ export const messagesEn = {
           "Clause-level risk flags plus compliance exposure callouts (extensions, penalties, disputes, regulatory hooks).",
       },
       {
-        title: "Pitch, share, and export",
+        title: "Plans that scale with your stack",
         description:
-          "A short verbal pitch, optional read-only share link, and a polished PDF export of the analysis.",
+          "Deal pitch from Starter. Share links, official analysis PDF, Slack, and the Integrations page from Pro—including programmatic HTTP access (curl, scripts, Postman) with your session. Free is web-dashboard only for those extras.",
       },
     ],
     howTitle: "How it works",
@@ -105,7 +106,8 @@ export const messagesEn = {
       },
       {
         title: "Act",
-        description: "Review the brief, copy the pitch, share a link with your team, or download the analysis PDF.",
+        description:
+          "Review the brief. Copy the deal pitch on Starter+. Share a read-only link or download the analysis PDF on Pro. Automate via HTTP from Pro+.",
       },
     ],
     testimonialsTitle: "Loved by sales teams",
@@ -142,7 +144,14 @@ export const messagesEn = {
         badge: null as string | null,
         highlight: false,
         cta: "Start free",
-        features: ["3 docs/month", "Basic extraction", "Risk flags", "Email support"],
+        features: [
+          "3 docs/month",
+          "Structured brief (essentials & risks)",
+          "Key terms",
+          "Web dashboard only — no Integrations page",
+          "Scripts, curl & API clients require Pro+",
+          "Email support",
+        ],
       },
       {
         name: "Starter",
@@ -153,9 +162,9 @@ export const messagesEn = {
         cta: "Get started",
         features: [
           "20 docs/month",
-          "Full extraction",
-          "Risk flags",
-          "Pitch generator",
+          "Everything in Free",
+          "10-second deal pitch",
+          "Share, PDF, Slack, Integrations & programmatic API on Pro+",
           "Email support",
         ],
       },
@@ -171,7 +180,7 @@ export const messagesEn = {
           "Full brief + risk profile",
           "Share links + analysis PDF",
           "Slack webhooks (incoming)",
-          "Document API (session auth)",
+          "Integrations + document HTTP API (session; curl & scripts)",
           "Salesforce & HubSpot — roadmap",
         ],
       },
@@ -183,7 +192,8 @@ export const messagesEn = {
         highlight: false,
         cta: "Get started",
         features: [
-          "5 seats",
+          "Everything in Pro (share, PDF, Slack, API, unlimited docs)",
+          "5 seats included",
           "Org dashboard",
           "Custom risk rules",
           "SSO",
@@ -213,11 +223,16 @@ export const messagesEn = {
         q: "Can I integrate with Salesforce or HubSpot?",
         a: "Deep CRM sync is on our roadmap for Pro and Team. Today you can use Slack incoming webhooks, share links, and PDF exports to keep your team aligned.",
       },
+      {
+        q: "Can I call the HTTP API from scripts, curl, or Postman?",
+        a: "Yes on Pro, Team, and Enterprise: use the same logged-in session as the dashboard (see API docs after upgrading). Free and Starter are full-featured in the web app; programmatic calls without browser fetch metadata are blocked below Pro.",
+      },
     ],
     ctaTitle: "Start understanding your deals today.",
     ctaSub: "3 free analyses per month. No credit card. Cancel anytime.",
     ctaButton: "Get started free",
-    footerRights: "© 2026 Embedflow. All rights reserved.",
+    footerCopyright: "© 2026 GaRSaaS. All rights reserved.",
+    footerTrademark: "Embedflow™ is a trademark of GaRSaaS™.",
   },
   dashboard: {
     title: "Dashboard",
@@ -379,6 +394,15 @@ export const messagesEn = {
     downloadPdf: "Download PDF",
     downloadPdfBusy: "Generating…",
     downloadPdfFailed: "Could not generate PDF.",
+    planGatedSharePdfHint: "Share links and the official analysis PDF are included with Pro, Team, and Enterprise.",
+    planGatedBillingLink: "View plans",
+    pitchGatedHint:
+      "The 10-second deal pitch is included from Starter. Upgrade, then use “Re-queue analysis” on this document to generate a pitch.",
+    weakSourceTitle: "Source text quality",
+    weakSourceTruncated:
+      "Part of the document was not analyzed because extracted text exceeded processing limits. Clauses in the omitted section may be missing from this summary.",
+    weakSourceLowQuality:
+      "The PDF text layer looks noisy or incomplete (common with scans or poor exports). Treat this summary as less reliable; consider OCR or uploading a text-based PDF or DOCX.",
     parties: "Parties",
     deleteConfirm:
       "Delete this document? The file will be removed from storage and the analysis will no longer appear in your list.",
@@ -415,8 +439,8 @@ export const messagesEn = {
     billingCardTitle: "Billing",
     billingCardDesc: "Usage, plans, and Stripe subscription",
     openBilling: "Open billing",
-    sessionTitle: "Session",
-    sessionDesc: "Sign out of Embedflow on this browser.",
+    sessionTitle: "Session & preferences",
+    sessionDesc: "Theme and interface language apply on this browser. Sign out when you are done.",
     dangerTitle: "Danger Zone",
     dangerDesc: "Account deletion is not available in the beta. Contact support if you need to close your account.",
     deleteAccount: "Delete Account",
@@ -433,6 +457,13 @@ export const messagesEn = {
   billing: {
     title: "Billing",
     subtitle: "Manage your subscription and usage",
+    comingSoonBadge: "Coming soon",
+    comingSoonTitle: "Self-serve checkout is on the way",
+    comingSoonBody:
+      "We're finalizing secure payments (Stripe and regional options). Your workspace stays on the Free plan — upload and analyze contracts as usual. Paid upgrades will appear here when we open checkout.",
+    comingSoonPlansNote: "Planned plans (preview only — checkout disabled).",
+    comingSoonFooter:
+      "Questions or need a paid plan early? Reach out through your usual Embedflow contact channel.",
     portalHintSubscribe:
       "Subscribe to a paid plan to manage billing in the Stripe portal.",
     portalHintMercadoPago:
@@ -452,20 +483,38 @@ export const messagesEn = {
     planPaidThroughPrefix: "Paid access through",
     planPaidThroughSuffix: "Renew with Mercado Pago to keep your plan.",
     currentPlanBadge: "Current plan",
+    planRecommendedBadge: "Recommended",
+    devPlanOverrideBanner:
+      'Preview mode: product features use plan "{planLabel}" from EMBEDFLOW_DEV_PLAN_OVERRIDE in .env.local. Remove or empty that variable for your real subscription.',
+    checkoutDisabledWhileOverride:
+      "Turn off the plan override in .env.local to use checkout or the billing portal.",
+    storedSubscriptionLabel: "Stored subscription",
+    usageDevQuotaBypass: "(dev: monthly cap bypassed)",
     plansList: [
       {
         id: "free",
         name: "Free",
         price: "$0",
         period: "/month",
-        features: ["3 docs/month", "Basic extraction", "Risk flags"],
+        features: [
+          "3 docs/month",
+          "Structured brief & risk flags",
+          "Key terms (no deal pitch on Free)",
+          "Web dashboard only — no Integrations",
+          "Programmatic HTTP API (curl/scripts) requires Pro+",
+        ],
       },
       {
         id: "starter",
         name: "Starter",
         price: "$29",
         period: "/user/mo",
-        features: ["20 docs/month", "Full extraction", "Risk flags", "Pitch generator"],
+        features: [
+          "20 docs/month",
+          "Everything in Free",
+          "10-second deal pitch",
+          "Share, PDF, Slack, Integrations & API on Pro+",
+        ],
       },
       {
         id: "pro",
@@ -476,7 +525,7 @@ export const messagesEn = {
           "Unlimited docs",
           "Share links + analysis PDF",
           "Slack webhooks",
-          "Document API",
+          "Integrations + document HTTP API (curl & scripts)",
           "CRM roadmap",
         ],
       },
@@ -485,7 +534,13 @@ export const messagesEn = {
         name: "Team",
         price: "$149",
         period: "/month",
-        features: ["5 seats included", "Org dashboard", "Custom risk rules", "SSO"],
+        features: [
+          "Everything in Pro",
+          "5 seats included",
+          "Org dashboard",
+          "Custom risk rules",
+          "SSO",
+        ],
       },
     ],
     actions: {
@@ -512,6 +567,9 @@ export const messagesEn = {
     slackSave: "Save Slack settings",
     slackSaved: "Slack webhook saved.",
     slackClear: "Remove webhook",
+    slackProPlanRequired:
+      "Slack notifications when an analysis completes are available on Pro, Team, and Enterprise. Upgrade to connect a webhook.",
+    slackUpgradeBilling: "Open billing",
     salesforceTitle: "Salesforce",
     salesforceDesc: "Sync deal fields from analyses. OAuth and field mapping — coming soon.",
     salesforceCta: "Coming soon",
@@ -521,12 +579,16 @@ export const messagesEn = {
     apiTitle: "REST API",
     apiDesc: "Programmatic access for automation and enterprise plans.",
     apiDocs: "API documentation",
+    apiDocsProOnly:
+      "HTTP API documentation and programmatic document endpoints require Pro, Team, or Enterprise.",
     billingNote: "Only owners and admins can change integration settings.",
   },
   docsApi: {
     title: "Embedflow API",
     intro:
       "HTTP endpoints used by the web app and worker. Public routes are listed below; all others require a logged-in Supabase session (cookie) or are server-to-server.",
+    programmaticAccessNote:
+      "Programmatic calls (e.g. curl) to /api/documents and /api/analyze without browser Fetch Metadata headers require Pro, Team, or Enterprise. The in-app dashboard uses the browser and is not affected. Salesforce and HubSpot integrations are roadmap-only today (see Integrations in the app).",
     healthHeading: "GET /api/v1/health",
     healthBody: "Returns JSON `{ ok, service, version, time }`. No authentication.",
     baseUrlNote: "Replace BASE with your deployed origin (e.g. https://app.example.com).",
@@ -550,7 +612,8 @@ export const messagesEn = {
     documentPdfHeading: "GET /api/documents/[id]/pdf",
     documentPdfBody: "Downloads a generated PDF summary (analysis must be complete). Requires session.",
     shareHeading: "POST /api/documents/[id]/share",
-    shareBody: "Body: `{ \"action\": \"create\" | \"revoke\" }` for share links. Requires session; org role may apply for integrations elsewhere.",
+    shareBody:
+      "Body: `{ \"action\": \"create\" | \"revoke\" }` for share links. Requires session. Creating a link requires Pro+; revoke allowed anytime. `403` + `plan_share` if the org is not on a sufficient plan.",
     billingHeading: "Billing",
     billingBody:
       "POST /api/billing/checkout — Stripe Checkout or Mercado Pago redirect URL depending on `BILLING_PROVIDER`. POST /api/billing/portal — Stripe Customer Portal only when using Stripe. Session required; org owner/admin where enforced in UI.",
@@ -563,12 +626,14 @@ export const messagesEn = {
     rateHeading: "Rate limits",
     rateBody: "No public API rate limit is enforced yet. Respect reasonable usage; enterprise plans may add quotas.",
     errorsHeading: "Errors",
-    errorsBody: "JSON errors use `{ \"error\": \"message\" }` and typical HTTP status codes (401, 403, 404, 500).",
+    errorsBody:
+      "JSON errors use `{ \"error\": \"message\", \"code\"?: string }` and typical HTTP status codes (401, 403, 404, 500). Plan-related codes include `plan_share`, `plan_pdf`, `plan_slack`, `plan_api` (programmatic document API on Free/Starter).",
     futureHeading: "Bearer API (planned)",
     futureBody:
-      "Machine-to-machine access (list documents, poll analysis, webhooks) will ship under API keys for Pro/Team. Contact us for early access.",
+      "Bearer tokens / API keys for automation, plus native Salesforce & HubSpot sync, are planned for Pro/Team. Contact us for early access.",
   },
   pdfExport: {
+    copyrightLine: "© 2026 GaRSaaS · Embedflow™ is a trademark of GaRSaaS™.",
     disclaimer:
       "AI-generated summary for business use only — not legal advice. Verify critical terms with qualified counsel.",
     generatedLabel: "Generated:",

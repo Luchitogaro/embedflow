@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import type { Plan } from "@/lib/plan-limits"
 import { getMessagesForRequest } from "@/lib/i18n/server"
-import { effectiveOrgPlan } from "@/lib/org-plan"
+import { getEffectivePlanForAuthUser } from "@/lib/server-org-plan"
 
 export default async function DashboardLayout({
   children,
@@ -26,15 +26,8 @@ export default async function DashboardLayout({
     .eq("id", user.id)
     .single()
 
-  let planSlug: Plan = "free"
-  if (profile?.org_id) {
-    const { data: org } = await supabase
-      .from("organizations")
-      .select("plan, plan_expires_at")
-      .eq("id", profile.org_id)
-      .single()
-    planSlug = effectiveOrgPlan(org?.plan, org?.plan_expires_at)
-  }
+  const planSlug = await getEffectivePlanForAuthUser(supabase, user.id)
+  const showIntegrationsNav = planSlug !== "free"
 
   const displayName = profile?.name?.trim() || user.email?.split("@")[0] || "User"
   const email = user.email ?? ""
@@ -51,6 +44,7 @@ export default async function DashboardLayout({
         locale={locale}
         language={messages.language}
         theme={messages.theme}
+        showIntegrationsNav={showIntegrationsNav}
       />
       <Sidebar
         displayName={displayName}
@@ -60,6 +54,7 @@ export default async function DashboardLayout({
         locale={locale}
         language={messages.language}
         theme={messages.theme}
+        showIntegrationsNav={showIntegrationsNav}
       />
       <main className="flex-1 w-full min-w-0 pt-14 md:pt-0 md:ml-64">
         {children}

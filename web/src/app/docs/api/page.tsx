@@ -1,13 +1,18 @@
 import Link from "next/link"
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
 import { getMessagesForRequest } from "@/lib/i18n/server"
 import { getSiteUrl } from "@/lib/site-url"
+import { getEffectivePlanForAuthUser } from "@/lib/server-org-plan"
+import { planSupportsProgrammaticDocumentApi } from "@/lib/plan-features"
 
 export async function generateMetadata(): Promise<Metadata> {
   const { messages } = await getMessagesForRequest()
   return {
     title: `${messages.docsApi.title} — Embedflow`,
     description: messages.docsApi.intro,
+    robots: { index: false, follow: false },
   }
 }
 
@@ -20,6 +25,19 @@ function Code({ children }: { children: string }) {
 }
 
 export default async function ApiDocsPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user?.email) {
+    redirect("/login?next=/docs/api")
+  }
+
+  const effPlan = await getEffectivePlanForAuthUser(supabase, user.id)
+  if (!planSupportsProgrammaticDocumentApi(effPlan)) {
+    redirect("/dashboard/settings/billing")
+  }
+
   const { messages } = await getMessagesForRequest()
   const d = messages.docsApi
   const base = getSiteUrl()
@@ -28,12 +46,19 @@ export default async function ApiDocsPage() {
     <div className="min-h-screen bg-white">
       <div className="max-w-3xl mx-auto px-6 py-12 sm:py-16">
         <p className="text-sm text-slate-500 mb-2">
+          <Link href="/dashboard" className="text-blue-600 hover:underline">
+            Dashboard
+          </Link>
+          {" · "}
           <Link href="/" className="text-blue-600 hover:underline">
             Embedflow
           </Link>
         </p>
         <h1 className="text-3xl font-bold text-slate-900 mb-4">{d.title}</h1>
         <p className="text-slate-600 mb-2 leading-relaxed">{d.intro}</p>
+        <p className="text-slate-600 text-sm mb-4 leading-relaxed border-l-2 border-amber-200 pl-3">
+          {d.programmaticAccessNote}
+        </p>
         <p className="text-slate-500 text-sm mb-12">{d.baseUrlNote}</p>
 
         <section className="mb-12">

@@ -1,5 +1,13 @@
 """
 Chunked extraction: small model calls per excerpt → aggregate → one merge to full schema.
+
+Operational notes (TPM / cost):
+- Each map call sends one window (up to ``hard_max_chunk`` chars, default 80k) to ``chunk_model``.
+- ``map_concurrency`` (default 2) controls parallel map calls; raising it speeds long docs but
+  multiplies peak tokens-per-minute and often triggers 429s on standard OpenAI tiers.
+- If the document still exceeds ``max_chunks`` after widening windows, the tail is truncated
+  (see ``split_text_into_chunks``); logs include ``OPENAI_CHUNK_MAX_COUNT`` for grep.
+- Tune via env vars documented in ``worker/.env.example`` and ``README.md`` (worker section).
 """
 
 from __future__ import annotations
@@ -15,6 +23,7 @@ from prompts.chunked_extraction import (
     build_merge_system,
     build_merge_user,
 )
+from services.extraction_response_guard import validate_chunk_partial, validate_full_extraction
 
 logger = logging.getLogger(__name__)
 
@@ -308,6 +317,7 @@ async def run_chunked_extraction(
                 model=chunk_model,
             )
         parsed = parse_extraction_json(raw)
+        validate_chunk_partial(parsed, context=f"Chunk map {idx + 1}/{total}")
         async with progress_lock:
             completed += 1
             step = max(1, total // 8)
@@ -329,6 +339,8 @@ async def run_chunked_extraction(
         require_json=True,
         model=merge_model,
     )
-    merged = normalize_extraction_dict(parse_extraction_json(merged_raw))
+    merged_dict = parse_extraction_json(merged_raw)
+    validate_full_extraction(merged_dict, context="Chunked merge")
+    merged = normalize_extraction_dict(merged_dict)
     logger.info("[%s] Merge step complete", document_id)
     return merged

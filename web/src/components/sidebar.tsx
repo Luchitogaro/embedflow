@@ -27,16 +27,28 @@ type SidebarProps = {
   locale: Locale
   language: Messages["language"]
   theme: Messages["theme"]
+  showIntegrationsNav: boolean
 }
 
-export function Sidebar({ displayName, email, planLabel, nav, locale, language, theme }: SidebarProps) {
+export function Sidebar({
+  displayName,
+  email,
+  planLabel,
+  nav,
+  locale,
+  language,
+  theme,
+  showIntegrationsNav,
+}: SidebarProps) {
   const pathname = usePathname()
 
   const navItems = [
     { href: "/dashboard", label: nav.dashboard, icon: LayoutDashboard },
     { href: "/dashboard/documents", label: nav.documents, icon: FileText },
     { href: "/dashboard/settings/billing", label: nav.billing, icon: CreditCard },
-    { href: "/dashboard/settings/integrations", label: nav.integrations, icon: Plug },
+    ...(showIntegrationsNav
+      ? [{ href: "/dashboard/settings/integrations" as const, label: nav.integrations, icon: Plug }]
+      : []),
     { href: "/dashboard/settings", label: nav.settings, icon: Settings },
   ]
 
@@ -51,7 +63,7 @@ export function Sidebar({ displayName, email, planLabel, nav, locale, language, 
         </Link>
       </div>
 
-      <div className="space-y-2 px-6 pb-2">
+      <div className="mx-4 mb-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-3 shadow-inner space-y-3">
         <ThemeToggle copy={theme} variant="dark" />
         <LanguageSwitcher locale={locale} language={language} variant="dark" />
       </div>

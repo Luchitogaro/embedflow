@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { getEffectivePlanForAuthUser } from "@/lib/server-org-plan"
+import { guardProgrammaticDocumentApi } from "@/lib/document-api-access"
 import { getLocale, getMessagesForRequest } from "@/lib/i18n/server"
 import { localeForWorkerAnalysis } from "@/lib/worker-locale"
 import { getWorkerUrl, workerAuthHeaders } from "@/lib/worker-auth"
@@ -8,7 +10,7 @@ import { uploadPlanLimitMessageIfExceeded } from "@/lib/upload-plan-limit"
 import { UPLOAD_MAX_FILE_BYTES, UPLOAD_MAX_FILE_MB } from "@/lib/upload-limits"
 import { messageForStorageUploadError } from "@/lib/storage-upload-errors"
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const supabase = await createClient()
   const {
     data: { user },
@@ -17,6 +19,10 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const effPlan = await getEffectivePlanForAuthUser(supabase, user.id)
+  const blocked = guardProgrammaticDocumentApi(req, effPlan)
+  if (blocked) return blocked
 
   const { data: documents } = await supabase
     .from("documents")
@@ -40,6 +46,10 @@ export async function POST(req: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: e.unauthorized }, { status: 401 })
   }
+
+  const effPlan = await getEffectivePlanForAuthUser(supabase, user.id)
+  const blocked = guardProgrammaticDocumentApi(req, effPlan)
+  if (blocked) return blocked
 
   const { data: userData } = await supabase.from("users").select("org_id").eq("id", user.id).single()
 

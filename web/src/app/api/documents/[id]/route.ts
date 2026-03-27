@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { getEffectivePlanForAuthUser } from "@/lib/server-org-plan"
+import { guardProgrammaticDocumentApi } from "@/lib/document-api-access"
 import { createServiceRoleClient } from "@/lib/supabase/admin"
 import { contractsObjectPathFromUrl } from "@/lib/contracts-storage"
 import { revalidatePath } from "next/cache"
@@ -15,6 +17,10 @@ export async function GET(
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const effPlan = await getEffectivePlanForAuthUser(supabase, user.id)
+  const blocked = guardProgrammaticDocumentApi(req, effPlan)
+  if (blocked) return blocked
 
   const { data: document } = await supabase
     .from("documents")
@@ -37,7 +43,7 @@ export async function GET(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
@@ -47,6 +53,10 @@ export async function DELETE(
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const effPlan = await getEffectivePlanForAuthUser(supabase, user.id)
+  const blocked = guardProgrammaticDocumentApi(req, effPlan)
+  if (blocked) return blocked
 
   const { data: document } = await supabase
     .from("documents")

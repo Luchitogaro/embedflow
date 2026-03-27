@@ -6,8 +6,11 @@ import os
 import httpx
 
 from services.db import get_client
+from services.org_plan import effective_org_plan
 
 logger = logging.getLogger(__name__)
+
+_PRO_SLACK_PLANS = frozenset({"pro", "team", "enterprise"})
 
 
 async def try_slack_analysis_complete(document_id: str) -> None:
@@ -30,7 +33,7 @@ async def try_slack_analysis_complete(document_id: str) -> None:
 
     org_res = (
         client.table("organizations")
-        .select("slack_webhook_url")
+        .select("slack_webhook_url, plan, plan_expires_at")
         .eq("id", org_id)
         .limit(1)
         .execute()
@@ -38,7 +41,11 @@ async def try_slack_analysis_complete(document_id: str) -> None:
     org_rows = org_res.data or []
     if not org_rows:
         return
-    url = org_rows[0].get("slack_webhook_url")
+    org_row = org_rows[0]
+    eff = effective_org_plan(org_row.get("plan"), org_row.get("plan_expires_at"))
+    if eff not in _PRO_SLACK_PLANS:
+        return
+    url = org_row.get("slack_webhook_url")
     if not url or not str(url).strip().startswith("https://hooks.slack.com/"):
         return
 

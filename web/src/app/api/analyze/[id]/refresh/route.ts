@@ -1,11 +1,13 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { getEffectivePlanForAuthUser } from "@/lib/server-org-plan"
+import { guardProgrammaticDocumentApi } from "@/lib/document-api-access"
 import { getLocale } from "@/lib/i18n/server"
 import { localeForWorkerAnalysis } from "@/lib/worker-locale"
 import { getWorkerUrl, workerAuthHeaders } from "@/lib/worker-auth"
 
 export async function POST(
-  _req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
@@ -15,6 +17,10 @@ export async function POST(
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const effPlan = await getEffectivePlanForAuthUser(supabase, user.id)
+  const blocked = guardProgrammaticDocumentApi(req, effPlan)
+  if (blocked) return blocked
 
   const { data: document } = await supabase
     .from("documents")

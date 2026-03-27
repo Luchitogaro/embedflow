@@ -94,4 +94,5 @@ jobs:
       - name: Syntax checks
         run: |
           python -m py_compile main.py routers/jobs.py services/db.py services/extractor.py \
-            services/chunked_pipeline.py prompts/chunked_extraction.py
+            services/chunked_pipeline.py services/org_plan.py services/text_quality.py \
+            prompts/chunked_extraction.py

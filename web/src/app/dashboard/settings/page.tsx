@@ -9,9 +9,10 @@ import type { Plan } from "@/lib/plan-limits"
 import { ensureUserAndOrg } from "@/lib/ensure-user-org"
 import { getMessagesForRequest } from "@/lib/i18n/server"
 import { effectiveOrgPlan } from "@/lib/org-plan"
+import { getEffectivePlanForAuthUser } from "@/lib/server-org-plan"
 
 export default async function SettingsPage() {
-  const { messages } = await getMessagesForRequest()
+  const { locale, messages } = await getMessagesForRequest()
   const s = messages.settings
 
   const supabase = await createClient()
@@ -35,6 +36,9 @@ export default async function SettingsPage() {
       .single()
     planSlug = effectiveOrgPlan(org?.plan, org?.plan_expires_at)
   }
+
+  const effPlan = await getEffectivePlanForAuthUser(supabase, user.id)
+  const showIntegrationsCard = effPlan !== "free"
 
   const planKey = planSlug as keyof typeof messages.planLabels
   const planLabel = messages.planLabels[planKey] ?? messages.planLabels.free
@@ -93,21 +97,28 @@ export default async function SettingsPage() {
           <CardDescription>{s.sessionDesc}</CardDescription>
         </CardHeader>
         <CardContent>
-          <SessionTools theme={messages.theme} logOutLabel={messages.nav.logOut} />
+          <SessionTools
+            theme={messages.theme}
+            language={messages.language}
+            locale={locale}
+            logOutLabel={messages.nav.logOut}
+          />
         </CardContent>
       </Card>
 
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-base">{messages.nav.integrations}</CardTitle>
-          <CardDescription>{messages.integrationsPage.subtitle}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Link href="/dashboard/settings/integrations">
-            <Button variant="outline" size="sm">{messages.nav.integrations}</Button>
-          </Link>
-        </CardContent>
-      </Card>
+      {showIntegrationsCard ? (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-base">{messages.nav.integrations}</CardTitle>
+            <CardDescription>{messages.integrationsPage.subtitle}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/dashboard/settings/integrations">
+              <Button variant="outline" size="sm">{messages.nav.integrations}</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card className="mb-6 border-border bg-muted/30">
         <CardHeader>

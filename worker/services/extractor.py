@@ -12,7 +12,9 @@ from openai import OpenAI, APIError, APIConnectionError, APITimeoutError, RateLi
 from services.chunked_pipeline import run_chunked_extraction
 from services.pdf_parser import extract_text_from_url
 from services.document_text_safety import sanitize_extracted_text
-from services.db import update_analysis
+from services.extraction_response_guard import validate_full_extraction, validate_pitch_text
+from services.db import update_analysis, get_effective_plan_for_document
+from services.text_quality import assess_extracted_text_quality
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +48,8 @@ OPENAI_CHUNK_MAP_CONCURRENCY = max(
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
 OPENAI_MODEL_CHUNK = os.getenv("OPENAI_MODEL_CHUNK", "gpt-4o-mini")
 OPENAI_MODEL_MERGE = os.getenv("OPENAI_MODEL_MERGE", "gpt-4o")
+# Optional: stronger single-shot + merge models when org effective plan is enterprise.
+OPENAI_MODEL_ENTERPRISE = os.getenv("OPENAI_MODEL_ENTERPRISE", "").strip()
 
 
 def _parse_openai_max_extracted_chars() -> int:
@@ -153,6 +157,14 @@ async def run_analysis(
     5. Store results in Supabase
     """
 
+    effective_plan = get_effective_plan_for_document(document_id)
+    main_model = OPENAI_MODEL
+    merge_model = OPENAI_MODEL_MERGE
+    if effective_plan == "enterprise" and OPENAI_MODEL_ENTERPRISE:
+        main_model = OPENAI_MODEL_ENTERPRISE
+        merge_model = OPENAI_MODEL_ENTERPRISE
+        logger.info("[%s] Using OPENAI_MODEL_ENTERPRISE for org plan=enterprise", document_id)
+
     # Step 1: Parse PDF → plain text
     logger.info(f"[{document_id}] Fetching document from {file_url}")
     text = await extract_text_from_url(file_url)
@@ -166,9 +178,11 @@ async def run_analysis(
             "or upload DOCX/TXT instead."
         )
 
+    truncated_before_analysis = False
     if OPENAI_MAX_EXTRACTED_CHARS > 0 and len(text) > OPENAI_MAX_EXTRACTED_CHARS:
         prev = len(text)
         text = text[: OPENAI_MAX_EXTRACTED_CHARS]
+        truncated_before_analysis = True
         logger.warning(
             "[%s] Extracted text truncated from %s to %s chars (OPENAI_MAX_EXTRACTED_CHARS). "
             "Tail is omitted; often indicates PDF extraction noise or an extreme-length contract.",
@@ -199,7 +213,7 @@ async def run_analysis(
             OPENAI_CHUNK_MAP_CONCURRENCY,
             OPENAI_MAX_EXTRACTED_CHARS,
             OPENAI_MODEL_CHUNK,
-            OPENAI_MODEL_MERGE,
+            merge_model,
         )
 
         async def call_chunked_openai(
@@ -225,7 +239,7 @@ async def run_analysis(
             chunk_size=OPENAI_CHUNK_CHAR_SIZE,
             overlap=OPENAI_CHUNK_OVERLAP,
             chunk_model=OPENAI_MODEL_CHUNK,
-            merge_model=OPENAI_MODEL_MERGE,
+            merge_model=merge_model,
             call_openai=call_chunked_openai,
             parse_extraction_json=_parse_extraction_json,
             normalize_extraction_dict=_normalize_extraction_dict,
@@ -239,23 +253,39 @@ async def run_analysis(
             system=build_extraction_system(locale),
             max_tokens=8192,
             require_json=True,
-            model=OPENAI_MODEL,
+            model=main_model,
         )
-        parsed = _normalize_extraction_dict(_parse_extraction_json(extraction_result))
+        extraction_dict = _parse_extraction_json(extraction_result)
+        validate_full_extraction(extraction_dict, context="Single-shot extraction")
+        parsed = _normalize_extraction_dict(extraction_dict)
 
     logger.info(f"[{document_id}] Extraction complete: {list(parsed.keys())}")
 
-    # Step 3: Generate deal pitch (same locale)
-    pitch_result = await _call_openai(
-        prompt=build_pitch_prompt(text[:OPENAI_PITCH_CONTEXT_CHARS], json.dumps(parsed), locale),
-        system=build_pitch_system(locale),
-        max_tokens=1024,
-        model=OPENAI_MODEL,
+    # Deal pitch: Starter+ only (Free omits this call — aligns with landing / billing).
+    if effective_plan == "free":
+        parsed["pitch_text"] = None
+        logger.info("[%s] Skipping pitch generation (org plan=free)", document_id)
+    else:
+        pitch_result = await _call_openai(
+            prompt=build_pitch_prompt(text[:OPENAI_PITCH_CONTEXT_CHARS], json.dumps(parsed), locale),
+            system=build_pitch_system(locale),
+            max_tokens=1024,
+            model=main_model,
+        )
+        pitch_clean = pitch_result.strip()
+        validate_pitch_text(pitch_clean, context="Pitch")
+        parsed["pitch_text"] = pitch_clean
+
+    source_quality = assess_extracted_text_quality(
+        text, truncated_before_analysis=truncated_before_analysis
     )
-    parsed["pitch_text"] = pitch_result.strip()
 
     # Step 4: Store results
-    await update_analysis(document_id=document_id, user_id=user_id, data=parsed)
+    await update_analysis(
+        document_id=document_id,
+        user_id=user_id,
+        data={**parsed, "source_quality": source_quality},
+    )
 
     return parsed
 

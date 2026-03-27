@@ -11,6 +11,7 @@ import {
   AnalysisObligationsCard,
 } from "@/components/analysis-rich-sections"
 import { loadSharedAnalysisByToken } from "@/lib/load-shared-analysis"
+import { AnalysisWeakSourceAlert } from "@/components/analysis-weak-source-alert"
 import { parseJsonField } from "@/lib/parse-json-field"
 import { getMessagesForRequest } from "@/lib/i18n/server"
 import { interpolate } from "@/lib/i18n/interpolate"
@@ -86,6 +87,16 @@ export default async function SharedAnalysisPage({ params }: { params: Promise<{
             {sv.poweredBy}
           </Link>
         </div>
+
+        <AnalysisWeakSourceAlert
+          sourceQuality={data.sourceQuality}
+          copy={{
+            weakSourceTitle: t.weakSourceTitle,
+            weakSourceTruncated: t.weakSourceTruncated,
+            weakSourceLowQuality: t.weakSourceLowQuality,
+          }}
+          className="border-amber-200 bg-amber-50/90 text-slate-900 [&>svg]:text-amber-700 [&_[data-slot=alert-description]]:text-slate-700"
+        />
 
         <Card>
           <CardHeader className="pb-2">

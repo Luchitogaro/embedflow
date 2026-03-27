@@ -11,6 +11,7 @@ import { AnalysisStatusWatcher } from "./analysis-status-watcher"
 import { AnalysisProgressSteps } from "@/components/analysis-progress-steps"
 import { DocumentDeleteButton } from "@/components/document-delete-button"
 import { AnalysisActions } from "@/components/analysis-actions"
+import { AnalysisWeakSourceAlert } from "@/components/analysis-weak-source-alert"
 import { KeyTermsList } from "@/components/key-terms-list"
 import {
   AnalysisComplianceExposureCard,
@@ -22,6 +23,13 @@ import { parseJsonField } from "@/lib/parse-json-field"
 import { getMessagesForRequest } from "@/lib/i18n/server"
 import { interpolate } from "@/lib/i18n/interpolate"
 import type { Messages } from "@/messages/en"
+import { effectiveOrgPlan } from "@/lib/org-plan"
+import {
+  planSupportsDealPitch,
+  planSupportsOfficialAnalysisPdf,
+  planSupportsShareLinks,
+} from "@/lib/plan-features"
+import type { Plan } from "@/lib/plan-limits"
 
 async function getDocumentWithAnalysis(docId: string, userId: string) {
   const supabase = await createClient()
@@ -99,6 +107,17 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
 
   if (!user) redirect("/login")
 
+  let effPlan: Plan = "free"
+  const { data: userRow } = await supabase.from("users").select("org_id").eq("id", user.id).single()
+  if (userRow?.org_id) {
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("plan, plan_expires_at")
+      .eq("id", userRow.org_id)
+      .single()
+    effPlan = effectiveOrgPlan(org?.plan, org?.plan_expires_at)
+  }
+
   const result = await getDocumentWithAnalysis(id, user.id)
   if (!result) notFound()
 
@@ -144,6 +163,8 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
     downloadPdf: t.downloadPdf,
     downloadPdfBusy: t.downloadPdfBusy,
     downloadPdfFailed: t.downloadPdfFailed,
+    planGatedSharePdfHint: t.planGatedSharePdfHint,
+    planGatedBillingLink: t.planGatedBillingLink,
   }
 
   return (
@@ -213,6 +234,18 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
               initialShareToken={shareToken}
               initialShareExpiresAt={shareExpiresAt}
               copy={shareCopy}
+              allowShareLinks={planSupportsShareLinks(effPlan)}
+              allowOfficialPdf={planSupportsOfficialAnalysisPdf(effPlan)}
+            />
+          </div>
+          <div className="no-print mb-6">
+            <AnalysisWeakSourceAlert
+              sourceQuality={(analysis as { source_quality?: unknown } | null)?.source_quality}
+              copy={{
+                weakSourceTitle: t.weakSourceTitle,
+                weakSourceTruncated: t.weakSourceTruncated,
+                weakSourceLowQuality: t.weakSourceLowQuality,
+              }}
             />
           </div>
           <div id="embedflow-analysis-print" className="embedflow-analysis-print space-y-6">
@@ -233,7 +266,7 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
             <AnalysisEssentialsCard copy={t} rawEssentials={analysis?.essentials} />
             <AnalysisComplianceExposureCard copy={t} rawEssentials={analysis?.essentials} />
 
-            {analysis?.pitch_text && (
+            {planSupportsDealPitch(effPlan) && analysis?.pitch_text ? (
               <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base text-blue-900">{t.pitchTitle}</CardTitle>
@@ -242,7 +275,22 @@ export default async function AnalysisPage({ params }: { params: Promise<{ id: s
                   <p className="text-foreground leading-relaxed">{analysis.pitch_text}</p>
                 </CardContent>
               </Card>
-            )}
+            ) : !planSupportsDealPitch(effPlan) ? (
+              <Card className="no-print border-dashed border-muted-foreground/25 bg-muted/30">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base text-muted-foreground">{t.pitchTitle}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm text-muted-foreground">
+                  <p>{t.pitchGatedHint}</p>
+                  <Link
+                    href="/dashboard/settings/billing"
+                    className="font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    {t.planGatedBillingLink}
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : null}
 
             <div>
               <h3 className="text-base font-semibold text-foreground mb-3">

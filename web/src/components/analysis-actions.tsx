@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Link2, Printer, Copy, Ban, FileDown } from "lucide-react"
+import Link from "next/link"
 import { getSiteUrl } from "@/lib/site-url"
 import { cn } from "@/lib/utils"
 import type { Messages } from "@/messages/en"
@@ -21,6 +22,8 @@ type Copy = Pick<
   | "downloadPdf"
   | "downloadPdfBusy"
   | "downloadPdfFailed"
+  | "planGatedSharePdfHint"
+  | "planGatedBillingLink"
 >
 
 type Props = {
@@ -29,6 +32,9 @@ type Props = {
   initialShareToken: string | null
   initialShareExpiresAt?: string | null
   copy: Copy
+  /** Pro, Team, Enterprise — billing-aligned */
+  allowShareLinks: boolean
+  allowOfficialPdf: boolean
 }
 
 export function AnalysisActions({
@@ -37,6 +43,8 @@ export function AnalysisActions({
   initialShareToken,
   initialShareExpiresAt = null,
   copy,
+  allowShareLinks,
+  allowOfficialPdf,
 }: Props) {
   const router = useRouter()
   const [token, setToken] = useState<string | null>(initialShareToken)
@@ -46,6 +54,7 @@ export function AnalysisActions({
   const [toast, setToast] = useState<string | null>(null)
 
   const canShare = status === "done"
+  const pdfDownloadAllowed = canShare && allowOfficialPdf
 
   async function postShare(action: "create" | "revoke") {
     setBusy(true)
@@ -126,14 +135,20 @@ export function AnalysisActions({
           variant="outline"
           size="sm"
           className="gap-1.5"
-          disabled={!canShare || busy}
+          disabled={busy || !canShare || (!token && !allowShareLinks)}
           onClick={() => void postShare(token ? "revoke" : "create")}
-          title={!canShare ? copy.shareOnlyWhenDone : undefined}
+          title={
+            !canShare
+              ? copy.shareOnlyWhenDone
+              : !token && !allowShareLinks
+                ? copy.planGatedSharePdfHint
+                : undefined
+          }
         >
           {token ? <Ban className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
           {token ? copy.shareRevoke : copy.shareCreate}
         </Button>
-        {token ? (
+        {token && allowShareLinks ? (
           <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={copyLink}>
             <Copy className="w-4 h-4" />
             {copy.shareCopy}
@@ -156,14 +171,24 @@ export function AnalysisActions({
           variant="outline"
           size="sm"
           className="gap-1.5"
-          disabled={!canShare || pdfBusy}
+          disabled={!pdfDownloadAllowed || pdfBusy}
           onClick={() => void downloadOfficialPdf()}
-          title={!canShare ? copy.shareOnlyWhenDone : undefined}
+          title={
+            !canShare ? copy.shareOnlyWhenDone : !allowOfficialPdf ? copy.planGatedSharePdfHint : undefined
+          }
         >
           <FileDown className="w-4 h-4" />
           {pdfBusy ? copy.downloadPdfBusy : copy.downloadPdf}
         </Button>
       </div>
+      {canShare && (!allowShareLinks || !allowOfficialPdf) ? (
+        <p className="text-xs text-amber-800 dark:text-amber-200/90">
+          {copy.planGatedSharePdfHint}{" "}
+          <Link href="/dashboard/settings/billing" className="font-medium underline underline-offset-2">
+            {copy.planGatedBillingLink}
+          </Link>
+        </p>
+      ) : null}
       <p className="text-xs text-slate-500">
         {copy.shareHint}
         {expiresAt ? ` Expires: ${new Date(expiresAt).toLocaleDateString()}.` : ""}

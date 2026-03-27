@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { randomUUID } from "crypto"
+import { getEffectivePlanForAuthUser } from "@/lib/server-org-plan"
+import { guardProgrammaticDocumentApi } from "@/lib/document-api-access"
+import { planSupportsShareLinks } from "@/lib/plan-features"
 
 const SHARE_LINK_TTL_DAYS = Math.max(
   1,
@@ -20,6 +23,10 @@ export async function POST(
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const effPlanForApi = await getEffectivePlanForAuthUser(supabase, user.id)
+  const apiBlocked = guardProgrammaticDocumentApi(req, effPlanForApi)
+  if (apiBlocked) return apiBlocked
 
   const { data: doc, error: fetchError } = await supabase
     .from("documents")
@@ -60,6 +67,12 @@ export async function POST(
   }
 
   if (action === "create") {
+    if (!planSupportsShareLinks(effPlanForApi)) {
+      return NextResponse.json(
+        { error: "Share links require Pro, Team, or Enterprise.", code: "plan_share" },
+        { status: 403 }
+      )
+    }
     const token = randomUUID()
     const now = new Date()
     const expiresAt = new Date(now.getTime() + SHARE_LINK_TTL_DAYS * 24 * 60 * 60 * 1000)

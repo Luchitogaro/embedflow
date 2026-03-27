@@ -8,6 +8,7 @@ test.describe("protected routes redirect when unauthenticated", () => {
     "/dashboard/documents",
     "/dashboard/settings/billing",
     "/dashboard/settings/integrations",
+    "/docs/api",
   ]) {
     test(`${path} requires login`, async ({ page }) => {
       await page.goto(path)

@@ -37,10 +37,9 @@ If analysis fails with **no selectable text** / **0 chars**, the PDF is likely *
 ### Database (Supabase)
 
 1. Create a Supabase project at supabase.com
-2. Run migrations in order in the SQL Editor:
-   - `supabase/migrations/001_initial_schema.sql`
-   - `supabase/migrations/002_documents_soft_delete.sql` (soft delete + RLS tweaks)
-   - `supabase/migrations/003_share_and_integrations.sql` (share links + Slack webhook column)
+2. Run migrations in order in the SQL Editor (see `supabase/migrations/`, numeric prefix), including at least through:
+   - `001_initial_schema.sql` … `003_share_and_integrations.sql` (baseline + share links)
+   - `011_analysis_source_quality.sql` (`analyses.source_quality` for low-confidence UI hints)
 3. Enable Email auth in Supabase dashboard → Authentication → Providers
 4. **Storage file size:** Dashboard → Storage → open the `contracts` bucket → **Configuration** (or project *Settings → Storage*) and set the **max file upload size** to at least the app limit (`UPLOAD_MAX_FILE_MB` in `web/src/lib/upload-limits.ts`, currently 35 MB). The default project limit is often lower; large PDFs fail with HTTP 413 from Storage until this is raised.
 
@@ -63,7 +62,7 @@ Use when `BILLING_PROVIDER=mercadopago` in the Next.js app (Stripe remains avail
 4. Configure webhook URL `https://your-domain.com/api/webhooks/mercadopago` in Mercado Pago (payment notifications). The handler validates `x-signature` and, on **approved** payments, sets `organizations.plan`, `billing_provider=mercadopago`, and `plan_expires_at` (period access, not Stripe subscriptions).
 5. For local testing, use sandbox credentials and set `MERCADOPAGO_USE_SANDBOX_INIT_POINT=true` so checkout uses `sandbox_init_point`.
 
-Operational checklist (empresa, webhooks, migraciones): see [`docs/PENDING_INTEGRATION.md`](docs/PENDING_INTEGRATION.md).
+Operational checklist (empresa, webhooks, migraciones): see [`docs/PENDING_INTEGRATION.md`](docs/PENDING_INTEGRATION.md). **SaaS quotas & limits** (monthly doc cap, upload size, worker vs billing): section **5** in that file.
 
 ### Analysis complete email (worker)
 
@@ -111,10 +110,12 @@ REDIS_URL=redis://localhost:6379
 ## Architecture
 
 ```
-web/          → Next.js 14 frontend (Vercel)
+web/          → Next.js frontend (Vercel, Fly, or Railway — see docs/deploy-railway.md)
 worker/       → FastAPI AI pipeline (Railway/Render)
 supabase/     → DB migrations
 ```
+
+**Railway (worker + web):** step-by-step [docs/deploy-railway.md](docs/deploy-railway.md).
 
 ## License
 

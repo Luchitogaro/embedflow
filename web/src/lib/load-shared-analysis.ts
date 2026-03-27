@@ -13,6 +13,7 @@ export type SharedAnalysisPayload = {
   keyPoints: unknown
   essentials: unknown
   obligations: unknown
+  sourceQuality: unknown
 }
 
 export async function loadSharedAnalysisByToken(
@@ -39,7 +40,7 @@ export async function loadSharedAnalysisByToken(
     const { data: analysis, error: anError } = await admin
       .from("analyses")
       .select(
-        "summary, pitch_text, risk_flags, key_terms, parties, dates, pricing, key_points, essentials, obligations"
+        "summary, pitch_text, risk_flags, key_terms, parties, dates, pricing, key_points, essentials, obligations, source_quality"
       )
       .eq("document_id", doc.id)
       .eq("user_id", doc.user_id)
@@ -60,6 +61,7 @@ export async function loadSharedAnalysisByToken(
       keyPoints: analysis.key_points,
       essentials: analysis.essentials,
       obligations: analysis.obligations,
+      sourceQuality: analysis.source_quality,
     }
   } catch {
     return null

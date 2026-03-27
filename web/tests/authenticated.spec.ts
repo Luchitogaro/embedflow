@@ -27,10 +27,18 @@ test.describe("authenticated dashboard", () => {
     ).toBeVisible()
   })
 
-  test("integrations settings: heading and Slack section", async ({ page }) => {
+  test("integrations settings: paid sees Slack; free redirects to billing", async ({ page }) => {
     await page.goto("/dashboard/settings/integrations")
     await expect(page).not.toHaveURL(/\/login/)
-    await expect(page.getByRole("heading", { level: 1, name: /integrations|integraciones|integrações/i })).toBeVisible()
-    await expect(page.getByText("Slack", { exact: true })).toBeVisible()
+    if (/\/dashboard\/settings\/billing/.test(page.url())) {
+      await expect(
+        page.getByRole("heading", { level: 1, name: /billing|facturación|cobrança|faturamento/i })
+      ).toBeVisible()
+    } else {
+      await expect(
+        page.getByRole("heading", { level: 1, name: /integrations|integraciones|integrações/i })
+      ).toBeVisible()
+      await expect(page.getByText("Slack", { exact: true })).toBeVisible()
+    }
   })
 })

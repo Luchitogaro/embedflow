@@ -5,6 +5,7 @@ We cannot reliably "filter" adversarial prose (arms race). Defense is layered:
 1. Sanitize transport artifacts (NUL, odd control chars) so prompts stay well-formed.
 2. Wrap untrusted body in rare delimiters so the model can separate instructions from data.
 3. System prompts state explicitly that delimited regions are untrusted and must not be obeyed as instructions.
+4. Prompts in ``prompts/output_policy.py`` forbid generating code/scripts/SQL/software steps; outputs stay JSON or plain pitch text (not a substitute for deterministic guardrails).
 
 See: https://owasp.org/www-community/attacks/PromptInjection
 """

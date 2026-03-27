@@ -40,8 +40,8 @@ export default async function LandingPage() {
           <span className="truncate text-lg font-bold tracking-tight">Embedflow</span>
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
-          <ThemeToggle copy={messages.theme} variant="light" />
-          <LanguageSwitcher locale={locale} language={messages.language} variant="light" />
+          <ThemeToggle copy={messages.theme} variant="light" layout="compact" />
+          <LanguageSwitcher locale={locale} language={messages.language} variant="light" layout="compact" />
           <Link
             href="/login"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
@@ -278,7 +278,10 @@ export default async function LandingPage() {
             </div>
             <span className="font-bold">Embedflow</span>
           </div>
-          <p className="text-sm text-muted-foreground">{l.footerRights}</p>
+          <div className="text-right text-sm text-muted-foreground space-y-1">
+            <p>{l.footerCopyright}</p>
+            <p>{l.footerTrademark}</p>
+          </div>
         </div>
       </footer>
     </div>

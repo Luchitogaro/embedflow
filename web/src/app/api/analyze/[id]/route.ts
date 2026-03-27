@@ -1,10 +1,12 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { getEffectivePlanForAuthUser } from "@/lib/server-org-plan"
+import { guardProgrammaticDocumentApi } from "@/lib/document-api-access"
 import { getWorkerUrl, workerAuthHeaders } from "@/lib/worker-auth"
 
 /** GET: poll worker job status. `id` is the worker job id (from POST /api/analyze). */
 export async function GET(
-  _req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: jobId } = await params
@@ -14,6 +16,10 @@ export async function GET(
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const effPlan = await getEffectivePlanForAuthUser(supabase, user.id)
+  const blocked = guardProgrammaticDocumentApi(req, effPlan)
+  if (blocked) return blocked
 
   const workerUrl = getWorkerUrl()
   try {

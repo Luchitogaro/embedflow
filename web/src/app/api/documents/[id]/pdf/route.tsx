@@ -6,11 +6,14 @@ import { getMessagesForRequest } from "@/lib/i18n/server"
 import { formatDate } from "@/lib/utils"
 import { AnalysisPdfDocument } from "@/lib/analysis-pdf"
 import { parseJsonField } from "@/lib/parse-json-field"
+import { getEffectivePlanForAuthUser } from "@/lib/server-org-plan"
+import { guardProgrammaticDocumentApi } from "@/lib/document-api-access"
+import { planSupportsOfficialAnalysisPdf } from "@/lib/plan-features"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
   const {
@@ -19,6 +22,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const effPlan = await getEffectivePlanForAuthUser(supabase, user.id)
+  const apiBlocked = guardProgrammaticDocumentApi(req, effPlan)
+  if (apiBlocked) return apiBlocked
+
+  if (!planSupportsOfficialAnalysisPdf(effPlan)) {
+    return NextResponse.json(
+      { error: "Official analysis PDF export requires Pro, Team, or Enterprise.", code: "plan_pdf" },
+      { status: 403 }
+    )
   }
 
   const { data: document } = await supabase
@@ -67,6 +81,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     keyPoints: p.keyPointsHeading,
     risks: p.risksHeading,
     disclaimer: p.disclaimer,
+    copyrightLine: p.copyrightLine,
   }
 
   const generatedAt = `${p.generatedLabel} ${formatDate(new Date().toISOString(), locale)}`

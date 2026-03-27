@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { getEffectivePlanForAuthUser } from "@/lib/server-org-plan"
+import { guardProgrammaticDocumentApi } from "@/lib/document-api-access"
+import { planSupportsSlackIntegration } from "@/lib/plan-features"
 
 function normalizeSlackUrl(raw: string | null | undefined): string | null {
   if (raw == null || typeof raw !== "string") return null
@@ -21,6 +24,10 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const effPlan = await getEffectivePlanForAuthUser(supabase, user.id)
+  const apiBlocked = guardProgrammaticDocumentApi(req, effPlan)
+  if (apiBlocked) return apiBlocked
+
   const { data: profile } = await supabase
     .from("users")
     .select("org_id, role")
@@ -29,6 +36,13 @@ export async function PUT(req: NextRequest) {
 
   if (!profile?.org_id || !["owner", "admin"].includes(profile.role ?? "")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  if (!planSupportsSlackIntegration(effPlan)) {
+    return NextResponse.json(
+      { error: "Slack webhooks require Pro, Team, or Enterprise.", code: "plan_slack" },
+      { status: 403 }
+    )
   }
 
   let body: { slackWebhookUrl?: string | null } = {}

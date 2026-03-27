@@ -46,6 +46,7 @@ export type AnalysisPdfLabels = {
   keyPoints: string
   risks: string
   disclaimer: string
+  copyrightLine: string
 }
 
 export type AnalysisPdfRisk = {
@@ -83,9 +84,9 @@ export function AnalysisPdfDocument({
   const risksToShow = riskFlags.slice(0, 12)
 
   return (
-    <Document title={`${filename} — Embedflow`} creator="Embedflow">
+    <Document title={`${filename} — Embedflow`} creator="GaRSaaS">
       <Page size="A4" style={styles.page}>
-        <Text style={styles.brand}>Embedflow — Contract analysis</Text>
+        <Text style={styles.brand}>Embedflow™ — Contract analysis · GaRSaaS</Text>
         <Text style={styles.title}>{truncate(filename, 120)}</Text>
         <Text style={styles.meta}>{generatedAt}</Text>
 
@@ -128,6 +129,8 @@ export function AnalysisPdfDocument({
 
         <Text style={styles.footer} fixed>
           {labels.disclaimer}
+          {"\n"}
+          {labels.copyrightLine}
         </Text>
       </Page>
     </Document>

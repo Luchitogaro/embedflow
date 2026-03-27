@@ -37,9 +37,19 @@ type Props = {
   locale: Locale
   language: Messages["language"]
   theme: Messages["theme"]
+  showIntegrationsNav: boolean
 }
 
-export function MobileDashboardNav({ displayName, email, planLabel, nav, locale, language, theme }: Props) {
+export function MobileDashboardNav({
+  displayName,
+  email,
+  planLabel,
+  nav,
+  locale,
+  language,
+  theme,
+  showIntegrationsNav,
+}: Props) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const dialogId = "mobile-dashboard-nav-dialog"
@@ -58,7 +68,9 @@ export function MobileDashboardNav({ displayName, email, planLabel, nav, locale,
     { href: "/dashboard", label: nav.dashboard, icon: LayoutDashboard },
     { href: "/dashboard/documents", label: nav.documents, icon: FileText },
     { href: "/dashboard/settings/billing", label: nav.billing, icon: CreditCard },
-    { href: "/dashboard/settings/integrations", label: nav.integrations, icon: Plug },
+    ...(showIntegrationsNav
+      ? [{ href: "/dashboard/settings/integrations" as const, label: nav.integrations, icon: Plug }]
+      : []),
     { href: "/dashboard/settings", label: nav.settings, icon: Settings },
   ]
 
@@ -107,10 +119,11 @@ export function MobileDashboardNav({ displayName, email, planLabel, nav, locale,
               <X className="w-5 h-5" />
             </button>
           </div>
-          <div className="space-y-3 border-b border-white/10 px-4 py-3">
+          <div className="mx-3 mb-3 space-y-3 rounded-xl border border-white/[0.1] bg-white/[0.05] px-3 py-3">
             <ThemeToggle copy={theme} variant="dark" />
             <LanguageSwitcher locale={locale} language={language} variant="dark" />
           </div>
+          <div className="h-px bg-white/10 mx-4" aria-hidden />
           <nav className="flex-1 overflow-y-auto px-3 py-4">
             {navItems.map((item) => {
               const Icon = item.icon

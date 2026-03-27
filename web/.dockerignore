@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+*.md
+playwright-report
+test-results
+playwright/.auth
+coverage
+.turbo
+.DS_Store

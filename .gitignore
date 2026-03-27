@@ -29,6 +29,10 @@ npm-debug.log*
 *.pem
 *.key
 
+# Local evaluation fixtures (may contain contracts)
+eval/fixtures/*.pdf
+eval/fixtures/*.docx
+
 # Supabase CLI temp files
 supabase/.temp/
 

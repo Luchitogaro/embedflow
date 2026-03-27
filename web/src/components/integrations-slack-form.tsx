@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import type { Messages } from "@/messages/en"
 
@@ -10,10 +11,12 @@ export function IntegrationsSlackForm({
   initialUrl,
   copy,
   canEdit,
+  slackPlanOk,
 }: {
   initialUrl: string
   copy: Copy
   canEdit: boolean
+  slackPlanOk: boolean
 }) {
   const [url, setUrl] = useState(initialUrl)
   const [pending, setPending] = useState(false)
@@ -43,6 +46,17 @@ export function IntegrationsSlackForm({
 
   if (!canEdit) {
     return <p className="text-sm text-muted-foreground">{copy.billingNote}</p>
+  }
+
+  if (!slackPlanOk) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {copy.slackProPlanRequired}{" "}
+        <Link href="/dashboard/settings/billing" className="font-medium text-foreground underline underline-offset-2">
+          {copy.slackUpgradeBilling}
+        </Link>
+      </p>
+    )
   }
 
   return (

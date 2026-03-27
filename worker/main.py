@@ -103,5 +103,8 @@ async def retry_pending():
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("WORKER_PORT", "8000"))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+
+    # Railway sets PORT; local dev often uses WORKER_PORT.
+    port = int(os.environ.get("PORT") or os.environ.get("WORKER_PORT", "8000"))
+    dev = os.environ.get("ENVIRONMENT", "development").lower() in ("development", "dev", "local")
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=dev)

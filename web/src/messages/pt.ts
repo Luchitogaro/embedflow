@@ -60,11 +60,12 @@ export const messagesPt: Messages = {
   landing: {
     signIn: "Entrar",
     startFree: "Começar grátis",
-    badge: "Beta público — 3 análises/mês grátis · EN/ES/PT · Links para compartilhar e PDF",
+    badge:
+      "Beta público — 3 análises/mês grátis · Painel web no Grátis · Integrações e API HTTP programática no Pro+",
     heroLine1: "Pare de ler contratos.",
     heroLine2: "Comece a entender negócios.",
     heroSub:
-      "Envie um PDF (ou DOCX/TXT) e receba um resumo estruturado—o essencial, pontos-chave, riscos e exposição de compliance—e um pitch curto. A análise leva ~1 minuto, no seu idioma.",
+      "Envie um PDF (ou DOCX/TXT) e receba um resumo estruturado—o essencial, pontos-chave, riscos e exposição de compliance. A análise leva ~1 minuto, no seu idioma. Tudo pela web no Grátis; pitch a partir do Starter; link de leitura, PDF, Slack, Integrações e acesso API programático (curl/scripts) a partir do Pro.",
     ctaPrimary: "Começar grátis — sem cartão",
     ctaSecondary: "Como funciona",
     heroFootnote: "3 documentos grátis por mês · Sem cartão",
@@ -88,9 +89,9 @@ export const messagesPt: Messages = {
           "Alertas por cláusula mais focos de compliance (prorrogações, multas, disputas, regulatório).",
       },
       {
-        title: "Pitch, compartilhar e exportar",
+        title: "Planos que acompanham seu stack",
         description:
-          "Pitch verbal curto, link somente leitura para o time e exportação em PDF da análise.",
+          "Pitch a partir do Starter. Links somente leitura, PDF oficial, Slack e a página de Integrações a partir do Pro—incluindo acesso HTTP programático (curl, scripts, Postman) com sua sessão. No Grátis esses extras ficam só no painel web.",
       },
     ],
     howTitle: "Como funciona",
@@ -109,7 +110,7 @@ export const messagesPt: Messages = {
       {
         title: "Aja",
         description:
-          "Revise o resumo, copie o pitch, compartilhe um link ou baixe o PDF da análise.",
+          "Revise o resumo. Copie o pitch com Starter+. Compartilhe um link ou baixe o PDF da análise com Pro. Automatize via HTTP a partir do Pro+.",
       },
     ],
     testimonialsTitle: "Amado por equipes de vendas",
@@ -146,7 +147,14 @@ export const messagesPt: Messages = {
         badge: null as string | null,
         highlight: false,
         cta: "Começar grátis",
-        features: ["3 docs/mês", "Extração básica", "Alertas de risco", "Suporte por e-mail"],
+        features: [
+          "3 docs/mês",
+          "Resumo estruturado (essencial e riscos)",
+          "Termos-chave",
+          "Somente painel web — sem página de Integrações",
+          "Scripts, curl e clientes de API exigem Pro+",
+          "Suporte por e-mail",
+        ],
       },
       {
         name: "Starter",
@@ -157,9 +165,9 @@ export const messagesPt: Messages = {
         cta: "Começar",
         features: [
           "20 docs/mês",
-          "Extração completa",
-          "Alertas de risco",
-          "Gerador de pitch",
+          "Tudo do plano Grátis",
+          "Pitch de 10 segundos",
+          "Compartilhar, PDF, Slack, Integrações e API programática no Pro+",
           "Suporte por e-mail",
         ],
       },
@@ -175,7 +183,7 @@ export const messagesPt: Messages = {
           "Brief completo + perfil de risco",
           "Links para compartilhar + PDF",
           "Webhooks Slack (entrada)",
-          "API de documentos (sessão)",
+          "Integrações + API HTTP de documentos (sessão; curl e scripts)",
           "Salesforce e HubSpot — roadmap",
         ],
       },
@@ -187,6 +195,7 @@ export const messagesPt: Messages = {
         highlight: false,
         cta: "Começar",
         features: [
+          "Tudo do Pro (compartilhar, PDF, Slack, API, docs ilimitados)",
           "5 licenças",
           "Painel da organização",
           "Regras de risco",
@@ -217,11 +226,16 @@ export const messagesPt: Messages = {
         q: "Integração com Salesforce ou HubSpot?",
         a: "Sincronização profunda com CRM está no roadmap para Pro e Equipe. Hoje você pode usar webhooks do Slack, links somente leitura e exportação em PDF para alinhar o time.",
       },
+      {
+        q: "Posso chamar a API HTTP por scripts, curl ou Postman?",
+        a: "Sim no Pro, Equipe e Enterprise: use a mesma sessão do painel (veja a documentação da API após o upgrade). Grátis e Starter são completos no app web; chamadas programáticas sem metadados de fetch do navegador ficam bloqueadas abaixo do Pro.",
+      },
     ],
     ctaTitle: "Comece a entender seus negócios hoje.",
     ctaSub: "3 análises grátis por mês. Sem cartão. Cancele quando quiser.",
     ctaButton: "Começar grátis",
-    footerRights: "© 2026 Embedflow. Todos os direitos reservados.",
+    footerCopyright: "© 2026 GaRSaaS. Todos os direitos reservados.",
+    footerTrademark: "Embedflow™ é marca comercial de GaRSaaS™.",
   },
   dashboard: {
     title: "Painel",
@@ -383,6 +397,16 @@ export const messagesPt: Messages = {
     downloadPdf: "Baixar PDF",
     downloadPdfBusy: "Gerando…",
     downloadPdfFailed: "Não foi possível gerar o PDF.",
+    planGatedSharePdfHint:
+      "Links de compartilhamento e o PDF oficial da análise estão incluídos em Pro, Team e Enterprise.",
+    planGatedBillingLink: "Ver planos",
+    pitchGatedHint:
+      "O pitch de 10 segundos está incluído a partir do Starter. Faça upgrade e use «Recolocar análise na fila» neste documento para gerar.",
+    weakSourceTitle: "Qualidade do texto de origem",
+    weakSourceTruncated:
+      "Parte do documento não foi analisada porque o texto extraído excedeu os limites de processamento. Cláusulas na parte omitida podem não aparecer neste resumo.",
+    weakSourceLowQuality:
+      "A camada de texto do PDF parece ruidosa ou incompleta (comum em digitalizações ou exportações ruins). Considere este resumo menos confiável; use OCR ou envie PDF com texto selecionável ou DOCX.",
     parties: "Partes",
     deleteConfirm:
       "Excluir este documento? O arquivo será removido do armazenamento e a análise não aparecerá mais na lista.",
@@ -419,8 +443,8 @@ export const messagesPt: Messages = {
     billingCardTitle: "Cobrança",
     billingCardDesc: "Uso, planos e assinatura Stripe",
     openBilling: "Abrir cobrança",
-    sessionTitle: "Sessão",
-    sessionDesc: "Encerre a sessão do Embedflow neste navegador.",
+    sessionTitle: "Sessão e preferências",
+    sessionDesc: "O tema e o idioma da interface valem neste navegador. Encerre a sessão quando terminar.",
     dangerTitle: "Zona de perigo",
     dangerDesc: "Exclusão de conta indisponível na beta. Fale com o suporte se precisar encerrar.",
     deleteAccount: "Excluir conta",
@@ -437,6 +461,13 @@ export const messagesPt: Messages = {
   billing: {
     title: "Cobrança",
     subtitle: "Gerencie sua assinatura e o uso",
+    comingSoonBadge: "Em breve",
+    comingSoonTitle: "Checkout próprio está a caminho",
+    comingSoonBody:
+      "Estamos finalizando pagamentos seguros (Stripe e opções regionais). Seu workspace permanece no plano Grátis — envie e analise contratos normalmente. Upgrades pagos aparecerão aqui quando abrirmos o checkout.",
+    comingSoonPlansNote: "Planos previstos (prévia — checkout desativado).",
+    comingSoonFooter:
+      "Dúvidas ou precisa de plano pago antes? Fale pelo canal habitual da Embedflow.",
     portalHintSubscribe: "Assine um plano pago para gerenciar a cobrança no portal Stripe.",
     portalHintMercadoPago:
       "Checkout Mercado Pago: renove nesta página quando o período pago terminar (sem portal Stripe).",
@@ -455,20 +486,38 @@ export const messagesPt: Messages = {
     planPaidThroughPrefix: "Acesso pago até",
     planPaidThroughSuffix: "Renove com o Mercado Pago para manter o plano.",
     currentPlanBadge: "Plano atual",
+    planRecommendedBadge: "Recomendado",
+    devPlanOverrideBanner:
+      'Modo pré-visualização: os recursos usam o plano «{planLabel}» via EMBEDFLOW_DEV_PLAN_OVERRIDE no .env.local. Remova ou esvazie essa variável para a assinatura real.',
+    checkoutDisabledWhileOverride:
+      "Desligue o override do plano no .env.local para usar o checkout ou o portal de cobrança.",
+    storedSubscriptionLabel: "Assinatura gravada",
+    usageDevQuotaBypass: "(dev: limite mensal ignorado)",
     plansList: [
       {
         id: "free",
         name: "Grátis",
         price: "$0",
         period: "/mês",
-        features: ["3 docs/mês", "Extração básica", "Alertas de risco"],
+        features: [
+          "3 docs/mês",
+          "Resumo e alertas de risco",
+          "Termos-chave (sem pitch no Grátis)",
+          "Somente painel web — sem Integrações",
+          "API HTTP programática (curl/scripts) exige Pro+",
+        ],
       },
       {
         id: "starter",
         name: "Starter",
         price: "$29",
         period: "/usuário/mês",
-        features: ["20 docs/mês", "Extração completa", "Alertas de risco", "Gerador de pitch"],
+        features: [
+          "20 docs/mês",
+          "Tudo do plano Grátis",
+          "Pitch de 10 segundos",
+          "Compartilhar, PDF, Slack, Integrações e API no Pro+",
+        ],
       },
       {
         id: "pro",
@@ -479,7 +528,7 @@ export const messagesPt: Messages = {
           "Docs ilimitados",
           "Links + PDF da análise",
           "Webhooks Slack",
-          "API de documentos",
+          "Integrações + API HTTP de documentos (curl e scripts)",
           "CRM no roadmap",
         ],
       },
@@ -488,7 +537,7 @@ export const messagesPt: Messages = {
         name: "Equipe",
         price: "$149",
         period: "/mês",
-        features: ["5 licenças", "Painel org.", "Regras de risco", "SSO"],
+        features: ["Tudo do Pro", "5 licenças", "Painel org.", "Regras de risco", "SSO"],
       },
     ],
     actions: {
@@ -515,6 +564,9 @@ export const messagesPt: Messages = {
     slackSave: "Salvar Slack",
     slackSaved: "Webhook do Slack salvo.",
     slackClear: "Remover webhook",
+    slackProPlanRequired:
+      "Notificações no Slack quando uma análise termina estão disponíveis em Pro, Team e Enterprise. Faça upgrade para conectar um webhook.",
+    slackUpgradeBilling: "Abrir cobrança",
     salesforceTitle: "Salesforce",
     salesforceDesc: "Sincronizar campos do negócio a partir das análises. OAuth e mapeamento — em breve.",
     salesforceCta: "Em breve",
@@ -524,12 +576,16 @@ export const messagesPt: Messages = {
     apiTitle: "API REST",
     apiDesc: "Acesso programático para automação e planos enterprise.",
     apiDocs: "Documentação da API",
+    apiDocsProOnly:
+      "A documentação HTTP da API e os endpoints programáticos de documentos exigem Pro, Team ou Enterprise.",
     billingNote: "Somente proprietários e administradores podem alterar integrações.",
   },
   docsApi: {
     title: "API Embedflow",
     intro:
       "Endpoints HTTP usados pelo app e pelo worker. Rotas públicas abaixo; as demais exigem sessão Supabase (cookie) ou chamadas servidor a servidor.",
+    programmaticAccessNote:
+      "Chamadas programáticas (ex.: curl) a /api/documents e /api/analyze sem cabeçalhos Fetch Metadata do navegador exigem Pro, Equipe ou Enterprise. O painel no navegador não é afetado. Integrações nativas com Salesforce e HubSpot seguem no roadmap (veja Integrações no app).",
     healthHeading: "GET /api/v1/health",
     healthBody: "JSON `{ ok, service, version, time }`. Sem autenticação.",
     baseUrlNote: "Troque BASE pela origem implantada (ex.: https://app.exemplo.com).",
@@ -553,7 +609,8 @@ export const messagesPt: Messages = {
     documentPdfHeading: "GET /api/documents/[id]/pdf",
     documentPdfBody: "Baixa um PDF gerado (análise deve estar concluída). Requer sessão.",
     shareHeading: "POST /api/documents/[id]/share",
-    shareBody: "Corpo: `{ \"action\": \"create\" | \"revoke\" }` para links de leitura. Requer sessão.",
+    shareBody:
+      "Corpo: `{ \"action\": \"create\" | \"revoke\" }` para links de leitura. Requer sessão. Criar link exige Pro+; revogar sempre permitido. `403` + `plan_share` se o plano for insuficiente.",
     billingHeading: "Cobrança",
     billingBody:
       "POST /api/billing/checkout — Stripe Checkout ou URL do Mercado Pago conforme `BILLING_PROVIDER`. POST /api/billing/portal — portal Stripe apenas com Stripe. Requer sessão; owner/admin onde a UI exigir.",
@@ -566,12 +623,14 @@ export const messagesPt: Messages = {
     rateHeading: "Limites de taxa",
     rateBody: "Ainda não há rate limit público rígido. Uso razoável; planos enterprise podem ter cotas.",
     errorsHeading: "Erros",
-    errorsBody: "JSON `{ \"error\": \"mensagem\" }` e códigos HTTP usuais (401, 403, 404, 500).",
+    errorsBody:
+      "JSON `{ \"error\": \"mensagem\", \"code\"?: string }` e códigos HTTP usuais (401, 403, 404, 500). Códigos de plano: `plan_share`, `plan_pdf`, `plan_slack`, `plan_api` (API programática de documentos no Grátis/Starter).",
     futureHeading: "API Bearer (planejada)",
     futureBody:
-      "Acesso máquina a máquina (listar documentos, status, webhooks) virá com API keys em Pro/Team. Fale conosco para acesso antecipado.",
+      "Tokens Bearer / chaves de API para automação, além de sync nativo com Salesforce e HubSpot, estão planejados para Pro/Team. Fale conosco para acesso antecipado.",
   },
   pdfExport: {
+    copyrightLine: "© 2026 GaRSaaS · Embedflow™ é marca comercial de GaRSaaS™.",
     disclaimer:
       "Resumo gerado por IA apenas para uso empresarial — não é aconselhamento jurídico. Verifique o crítico com assessoria qualificada.",
     generatedLabel: "Gerado:",

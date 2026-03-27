@@ -7,9 +7,45 @@ import os
 import logging
 from supabase import create_client, Client
 
+from services.org_plan import dev_plan_override, effective_org_plan
+
 logger = logging.getLogger(__name__)
 
 _supabase_client: Client | None = None
+
+
+def get_effective_plan_for_document(document_id: str) -> str:
+    """Resolve org plan with Mercado Pago expiry semantics (same as Next.js `effectiveOrgPlan`)."""
+    o = dev_plan_override()
+    if o is not None:
+        return o
+
+    client = get_client()
+    doc_res = (
+        client.table("documents")
+        .select("org_id")
+        .eq("id", document_id)
+        .limit(1)
+        .execute()
+    )
+    rows = doc_res.data or []
+    if not rows:
+        return "free"
+    org_id = rows[0].get("org_id")
+    if not org_id:
+        return "free"
+    org_res = (
+        client.table("organizations")
+        .select("plan, plan_expires_at")
+        .eq("id", org_id)
+        .limit(1)
+        .execute()
+    )
+    org_rows = org_res.data or []
+    if not org_rows:
+        return "free"
+    row = org_rows[0]
+    return effective_org_plan(row.get("plan"), row.get("plan_expires_at"))
 
 
 def get_client() -> Client:
@@ -62,6 +98,7 @@ async def update_analysis(document_id: str, user_id: str, data: dict) -> None:
         "key_points": data.get("key_points", []),
         "obligations": data.get("obligations", []),
         "tokens_used": data.get("tokens_used", 0),
+        "source_quality": data.get("source_quality") or {},
     }
 
     # Supabase Python does not support .eq() chained after upsert on this builder.

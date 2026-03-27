@@ -5,6 +5,7 @@ import type { NextConfig } from "next"
 // which truncates multipart uploads and causes "Unexpected end of form" for larger PDFs.
 // App max file size is UPLOAD_MAX_FILE_BYTES (~35 MB); keep limits above that + multipart overhead.
 const nextConfig = {
+  output: "standalone",
   serverExternalPackages: ["@react-pdf/renderer"],
   experimental: {
     proxyClientMaxBodySize: "40mb",
