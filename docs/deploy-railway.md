@@ -6,7 +6,7 @@ Guía paso a paso para un monorepo con **dos servicios** desde el mismo reposito
 
 - Cuenta [Railway](https://railway.app) y proyecto **GitHub** con este repo.
 - Proyecto **Supabase** con migraciones aplicadas (`supabase/migrations/` en orden).
-- **OpenAI API key**.
+- **OpenAI API key** (o configuración **Azure OpenAI** en el worker; véase [azure-openai.md](./azure-openai.md)).
 - (Opcional) Stripe / Mercado Pago / Resend — no son obligatorios para probar el flujo Free.
 
 ## Paso 1 — Proyecto en Railway
@@ -27,7 +27,8 @@ Guía paso a paso para un monorepo con **dos servicios** desde el mismo reposito
 | `SUPABASE_URL` | URL del proyecto Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role (Dashboard → Settings → API) |
 | `SUPABASE_JWT_SECRET` | JWT Secret (Settings → API → JWT) |
-| `OPENAI_API_KEY` | Tu clave OpenAI |
+| `OPENAI_API_KEY` | Clave OpenAI **o** clave Azure si usas `AZURE_OPENAI_ENDPOINT` (véase [azure-openai.md](./azure-openai.md)) |
+| `AZURE_OPENAI_*` | (Opcional) Solo si usas Azure en lugar de OpenAI público: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY` (o la misma en `OPENAI_API_KEY`), y deployments en `OPENAI_MODEL*` — [guía Azure](./azure-openai.md) |
 | `WORKER_SHARED_SECRET` | Cadena larga aleatoria (la **misma** luego en la web) |
 | `ENVIRONMENT` | `production` |
 | `APP_URL` | URL **pública** de la app Next (ej. `https://web-production-xxxx.up.railway.app` o tu dominio). Puedes actualizarla después del paso 3. |

@@ -117,6 +117,8 @@ supabase/     → DB migrations
 
 **Railway (worker + web):** step-by-step [docs/deploy-railway.md](docs/deploy-railway.md).
 
+**Azure OpenAI (worker):** [docs/azure-openai.md](docs/azure-openai.md).
+
 ## License
 
 MIT — Luis GR, 2026
