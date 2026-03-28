@@ -6,10 +6,12 @@ import Link from "next/link"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import type { Messages } from "@/messages/en"
 import { interpolate } from "@/lib/i18n/interpolate"
+import { AI_PROCESSING_CONSENT_VERSION } from "@/lib/ai-processing-consent"
 
 type AuthCopy = Messages["auth"]
+type ConsentCopy = Messages["aiProcessingConsent"]
 
-export function SignupForm({ t }: { t: AuthCopy }) {
+export function SignupForm({ t, consent }: { t: AuthCopy; consent: ConsentCopy }) {
   const supabase = createClient()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -18,17 +20,28 @@ export function SignupForm({ t }: { t: AuthCopy }) {
   const [error, setError] = useState("")
   const [magicSent, setMagicSent] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [aiConsent, setAiConsent] = useState(false)
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError("")
+    if (!aiConsent) {
+      setError(consent.required)
+      setLoading(false)
+      return
+    }
 
+    const consentAt = new Date().toISOString()
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { name },
+        data: {
+          name,
+          ai_processing_consent_at: consentAt,
+          ai_processing_consent_version: AI_PROCESSING_CONSENT_VERSION,
+        },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     })
@@ -45,9 +58,21 @@ export function SignupForm({ t }: { t: AuthCopy }) {
     e.preventDefault()
     setLoading(true)
     setError("")
+    if (!aiConsent) {
+      setError(consent.required)
+      setLoading(false)
+      return
+    }
+    const consentAt = new Date().toISOString()
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          ai_processing_consent_at: consentAt,
+          ai_processing_consent_version: AI_PROCESSING_CONSENT_VERSION,
+        },
+      },
     })
     setLoading(false)
     if (error) {
@@ -138,9 +163,22 @@ export function SignupForm({ t }: { t: AuthCopy }) {
           <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
         )}
 
+        <label className="flex cursor-pointer items-start gap-2.5 text-left">
+          <input
+            type="checkbox"
+            checked={aiConsent}
+            onChange={(e) => setAiConsent(e.target.checked)}
+            className="mt-1 h-4 w-4 shrink-0 rounded border-input"
+          />
+          <span className="text-xs leading-relaxed text-muted-foreground">
+            <span className="font-medium text-foreground">{consent.label}</span>
+            <span className="block mt-1">{consent.hint}</span>
+          </span>
+        </label>
+
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !aiConsent}
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -160,7 +198,7 @@ export function SignupForm({ t }: { t: AuthCopy }) {
       <button
         type="button"
         onClick={handleMagicLink}
-        disabled={loading || !email}
+        disabled={loading || !email || !aiConsent}
         className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
       >
         ✉️ {t.continueMagicLink}

@@ -13,6 +13,11 @@ export const messagesEs: Messages = {
     dark: "Oscuro",
     system: "Sistema",
   },
+  aiProcessingConsent: {
+    label: "Acepto el tratamiento con IA de mis contratos",
+    hint: "El texto de los contratos que subes se extrae y se envía a nuestra canalización de análisis, incluido el proveedor de IA configurado en este despliegue (por ejemplo OpenAI o Azure OpenAI). No subas documentos que no estés autorizado a compartir. Esto no es asesoramiento jurídico.",
+    required: "Confirma el tratamiento con IA para continuar.",
+  },
   nav: {
     dashboard: "Panel",
     documents: "Documentos",
@@ -277,6 +282,8 @@ export const messagesEs: Messages = {
           "El archivo supera el límite de subida configurado en Storage en tu proyecto Supabase (bucket o límite global). En el panel de Supabase, sube el límite del bucket contracts (o el predeterminado del proyecto) para que coincida con la app, o usa un archivo más pequeño.",
         saveFailed: "No se pudo registrar el documento. Inténtalo de nuevo.",
         setupFailed: "La cuenta no está lista. Inténtalo de nuevo o contacta con soporte.",
+        consentRequired:
+          "Acepta el tratamiento con IA arriba para subir. El texto del contrato se analiza con los servicios de IA configurados.",
       },
     },
     onboarding: {
@@ -601,7 +608,8 @@ export const messagesEs: Messages = {
     documentsListHeading: "GET /api/documents",
     documentsListBody: "Lista JSON de tus documentos (límite 50). Requiere sesión.",
     documentsPostHeading: "POST /api/documents",
-    documentsPostBody: "Multipart, campo `file` — sube y encola análisis. Requiere sesión.",
+    documentsPostBody:
+      "Multipart: `file` (PDF, DOCX, TXT). Si aún no aceptaste el tratamiento con IA en la web, añade una vez el campo `aiProcessingConsent=true`. Requiere sesión.",
     documentGetHeading: "GET /api/documents/[id]",
     documentGetBody: "JSON `{ document, analysis }` de un documento tuyo. Requiere sesión.",
     documentDeleteHeading: "DELETE /api/documents/[id]",

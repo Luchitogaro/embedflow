@@ -9,6 +9,8 @@ import { interpolate } from "@/lib/i18n/interpolate"
 import { uploadPlanLimitMessageIfExceeded } from "@/lib/upload-plan-limit"
 import { UPLOAD_MAX_FILE_BYTES, UPLOAD_MAX_FILE_MB } from "@/lib/upload-limits"
 import { messageForStorageUploadError } from "@/lib/storage-upload-errors"
+import { ensureUserAndOrg } from "@/lib/ensure-user-org"
+import { recordAiProcessingConsentNow } from "@/lib/ai-consent-server"
 
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
@@ -51,24 +53,40 @@ export async function POST(req: NextRequest) {
   const blocked = guardProgrammaticDocumentApi(req, effPlan)
   if (blocked) return blocked
 
-  const { data: userData } = await supabase.from("users").select("org_id").eq("id", user.id).single()
-
-  const limitMsg = await uploadPlanLimitMessageIfExceeded(
-    supabase,
-    user.id,
-    userData?.org_id ?? null,
-    user.email,
-    messages
-  )
-  if (limitMsg) {
-    return NextResponse.json({ error: limitMsg }, { status: 403 })
-  }
-
   let formData: FormData
   try {
     formData = await req.formData()
   } catch {
     return NextResponse.json({ error: e.bodyTruncated }, { status: 400 })
+  }
+
+  let userData: Awaited<ReturnType<typeof ensureUserAndOrg>>
+  try {
+    userData = await ensureUserAndOrg(user.id, user.email ?? "", user)
+  } catch {
+    return NextResponse.json({ error: e.setupFailed }, { status: 500 })
+  }
+
+  const formConsentAck = formData.get("aiProcessingConsent") === "true"
+  if (!userData.ai_processing_consent_at) {
+    if (!formConsentAck) {
+      return NextResponse.json({ error: e.consentRequired }, { status: 403 })
+    }
+    const ok = await recordAiProcessingConsentNow(supabase, user.id)
+    if (!ok) {
+      return NextResponse.json({ error: e.saveFailed }, { status: 500 })
+    }
+  }
+
+  const limitMsg = await uploadPlanLimitMessageIfExceeded(
+    supabase,
+    user.id,
+    userData.org_id ?? null,
+    user.email,
+    messages
+  )
+  if (limitMsg) {
+    return NextResponse.json({ error: limitMsg }, { status: 403 })
   }
 
   const file = formData.get("file") as File | null

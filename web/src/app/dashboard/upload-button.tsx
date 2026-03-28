@@ -12,17 +12,31 @@ import { UPLOAD_MAX_FILE_BYTES, UPLOAD_MAX_FILE_MB } from "@/lib/upload-limits"
 import { mapUnknownUploadError } from "@/lib/upload-client-errors"
 
 type UploadCopy = Messages["dashboard"]["upload"]
+type ConsentCopy = Messages["aiProcessingConsent"]
 
-export function UploadButton({ upload }: { upload: UploadCopy }) {
+export function UploadButton({
+  upload,
+  hasAiProcessingConsent,
+  consent,
+}: {
+  upload: UploadCopy
+  hasAiProcessingConsent: boolean
+  consent: ConsentCopy
+}) {
   const router = useRouter()
   const [dragging, setDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState("")
+  const [aiCheckbox, setAiCheckbox] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleFile = async (file: File) => {
     setError("")
+    if (!hasAiProcessingConsent && !aiCheckbox) {
+      setError(upload.errors.consentRequired)
+      return
+    }
     if (file.size > UPLOAD_MAX_FILE_BYTES) {
       setError(interpolate(upload.errors.tooLarge, { maxMb: UPLOAD_MAX_FILE_MB }))
       return
@@ -31,6 +45,9 @@ export function UploadButton({ upload }: { upload: UploadCopy }) {
     try {
       const formData = new FormData()
       formData.append("file", file)
+      if (!hasAiProcessingConsent && aiCheckbox) {
+        formData.append("aiProcessingConsent", "true")
+      }
       const result = await uploadDocument(formData)
       if ("error" in result) {
         setError(result.error)
@@ -66,7 +83,8 @@ export function UploadButton({ upload }: { upload: UploadCopy }) {
       className={cn(
         "relative flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200",
         dragging ? "border-blue-500 bg-primary/10" : "border-border hover:border-border hover:bg-muted/40",
-        uploading && "opacity-60 pointer-events-none"
+        uploading && "opacity-60 pointer-events-none",
+        !hasAiProcessingConsent && !aiCheckbox && "opacity-70"
       )}
     >
       <input
@@ -78,9 +96,24 @@ export function UploadButton({ upload }: { upload: UploadCopy }) {
           const file = e.target.files?.[0]
           if (file) handleFile(file)
         }}
-        disabled={uploading}
+        disabled={uploading || (!hasAiProcessingConsent && !aiCheckbox)}
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
       />
+
+      {!hasAiProcessingConsent && (
+        <label className="absolute top-3 left-3 right-3 z-10 flex cursor-pointer items-start gap-2 rounded-lg border border-border bg-card/95 p-3 text-left shadow-sm backdrop-blur-sm">
+          <input
+            type="checkbox"
+            checked={aiCheckbox}
+            onChange={(e) => setAiCheckbox(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-input"
+          />
+          <span className="text-xs leading-relaxed text-muted-foreground">
+            <span className="font-medium text-foreground">{consent.label}</span>
+            <span className="block mt-1">{consent.hint}</span>
+          </span>
+        </label>
+      )}
 
       {uploading && !done && (
         <>

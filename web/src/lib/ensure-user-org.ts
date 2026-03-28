@@ -1,17 +1,47 @@
 import { createClient } from "@/lib/supabase/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
+import type { User } from "@supabase/supabase-js"
+import { consentPayloadFromAuthMetadata } from "@/lib/ai-consent-server"
+
+export type EnsuredUserRow = {
+  id: string
+  org_id: string | null
+  ai_processing_consent_at: string | null
+}
 
 /** Ensures `public.users` row + org exist (needed before billing or uploads). */
-export async function ensureUserAndOrg(userId: string, userEmail: string) {
+export async function ensureUserAndOrg(
+  userId: string,
+  userEmail: string,
+  authUser?: Pick<User, "user_metadata"> | null
+): Promise<EnsuredUserRow> {
   const supabase = await createClient()
+  const consentMeta = consentPayloadFromAuthMetadata(authUser?.user_metadata)
 
   const { data: existingUser } = await supabase
     .from("users")
-    .select("id, org_id")
+    .select("id, org_id, ai_processing_consent_at")
     .eq("id", userId)
     .single()
 
-  if (existingUser) return existingUser
+  if (existingUser) {
+    if (!existingUser.ai_processing_consent_at && consentMeta) {
+      await supabase
+        .from("users")
+        .update({
+          ai_processing_consent_at: consentMeta.at,
+          ai_processing_consent_version: consentMeta.version,
+        })
+        .eq("id", userId)
+      const { data: synced } = await supabase
+        .from("users")
+        .select("id, org_id, ai_processing_consent_at")
+        .eq("id", userId)
+        .single()
+      return (synced ?? { ...existingUser, ai_processing_consent_at: consentMeta.at }) as EnsuredUserRow
+    }
+    return existingUser as EnsuredUserRow
+  }
 
   const serviceUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -38,11 +68,17 @@ export async function ensureUserAndOrg(userId: string, userEmail: string) {
       email: userEmail,
       org_id: org.id,
       role: "owner",
+      ...(consentMeta
+        ? {
+            ai_processing_consent_at: consentMeta.at,
+            ai_processing_consent_version: consentMeta.version,
+          }
+        : {}),
     })
-    .select()
+    .select("id, org_id, ai_processing_consent_at")
     .single()
 
   if (userError) throw new Error(`Failed to create user record: ${userError.message}`)
 
-  return { id: newUser.id, org_id: newUser.org_id }
+  return newUser as EnsuredUserRow
 }

@@ -13,6 +13,11 @@ export const messagesPt: Messages = {
     dark: "Escuro",
     system: "Sistema",
   },
+  aiProcessingConsent: {
+    label: "Concordo com o processamento por IA dos meus contratos",
+    hint: "O texto dos contratos enviados é extraído e enviado ao nosso pipeline de análise, inclusive ao provedor de IA configurado neste deploy (por exemplo OpenAI ou Azure Open AI). Não envie documentos que você não esteja autorizado a compartilhar. Isto não é aconselhamento jurídico.",
+    required: "Confirme o processamento por IA para continuar.",
+  },
   nav: {
     dashboard: "Painel",
     documents: "Documentos",
@@ -277,6 +282,8 @@ export const messagesPt: Messages = {
           "O arquivo excede o limite de upload do Storage no seu projeto Supabase (bucket ou limite global). No painel do Supabase, aumente o limite do bucket contracts (ou o padrão do projeto) para bater com o app, ou use um arquivo menor.",
         saveFailed: "Não foi possível salvar o documento. Tente de novo.",
         setupFailed: "Sua conta ainda não está pronta. Tente de novo ou fale com o suporte.",
+        consentRequired:
+          "Aceite o processamento por IA acima para enviar. O texto do contrato é analisado pelos serviços de IA configurados.",
       },
     },
     onboarding: {
@@ -601,7 +608,8 @@ export const messagesPt: Messages = {
     documentsListHeading: "GET /api/documents",
     documentsListBody: "Lista JSON dos seus documentos (limite 50). Requer sessão.",
     documentsPostHeading: "POST /api/documents",
-    documentsPostBody: "Multipart, campo `file` — envia e enfileira análise. Requer sessão.",
+    documentsPostBody:
+      "Multipart: `file` (PDF, DOCX, TXT). Se ainda não aceitou o processamento por IA no app web, inclua uma vez o campo `aiProcessingConsent=true`. Requer sessão.",
     documentGetHeading: "GET /api/documents/[id]",
     documentGetBody: "JSON `{ document, analysis }` de um documento seu. Requer sessão.",
     documentDeleteHeading: "DELETE /api/documents/[id]",

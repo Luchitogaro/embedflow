@@ -6,10 +6,12 @@ import Link from "next/link"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import type { Messages } from "@/messages/en"
 import { interpolate } from "@/lib/i18n/interpolate"
+import { AI_PROCESSING_CONSENT_VERSION } from "@/lib/ai-processing-consent"
 
 type AuthCopy = Messages["auth"]
+type ConsentCopy = Messages["aiProcessingConsent"]
 
-export function LoginForm({ t }: { t: AuthCopy }) {
+export function LoginForm({ t, consent }: { t: AuthCopy; consent: ConsentCopy }) {
   const supabase = createClient()
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
@@ -17,15 +19,28 @@ export function LoginForm({ t }: { t: AuthCopy }) {
   const [magicSent, setMagicSent] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [password, setPassword] = useState("")
+  const [aiConsentMagic, setAiConsentMagic] = useState(false)
 
   const handleMagicLink = async () => {
     setLoading(true)
     setError("")
+    if (!aiConsentMagic) {
+      setError(consent.required)
+      setLoading(false)
+      return
+    }
     const emailInput = document.getElementById("login-email") as HTMLInputElement | null
     const emailValue = emailInput?.value?.trim() ?? email
+    const consentAt = new Date().toISOString()
     const { error } = await supabase.auth.signInWithOtp({
       email: emailValue,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          ai_processing_consent_at: consentAt,
+          ai_processing_consent_version: AI_PROCESSING_CONSENT_VERSION,
+        },
+      },
     })
     setLoading(false)
     if (error) {
@@ -154,10 +169,23 @@ export function LoginForm({ t }: { t: AuthCopy }) {
         </div>
       </div>
 
+      <label className="mb-4 flex cursor-pointer items-start gap-2.5 text-left">
+        <input
+          type="checkbox"
+          checked={aiConsentMagic}
+          onChange={(e) => setAiConsentMagic(e.target.checked)}
+          className="mt-1 h-4 w-4 shrink-0 rounded border-input"
+        />
+        <span className="text-xs leading-relaxed text-muted-foreground">
+          <span className="font-medium text-foreground">{consent.label}</span>
+          <span className="block mt-1">{consent.hint}</span>
+        </span>
+      </label>
+
       <button
         type="button"
         onClick={handleMagicLink}
-        disabled={loading || !email}
+        disabled={loading || !email || !aiConsentMagic}
         className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
       >
         ✉️ {t.sendMagicLink}

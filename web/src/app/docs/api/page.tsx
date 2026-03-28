@@ -83,7 +83,10 @@ export default async function ApiDocsPage() {
         <section className="mb-12">
           <h2 className="text-lg font-semibold text-slate-900 mb-2">{d.documentsPostHeading}</h2>
           <p className="text-slate-600 text-sm">{d.documentsPostBody}</p>
-          <Code>{`curl -X POST -b "your-session-cookie" -F "file=@./contract.pdf" "${base}/api/documents"`}</Code>
+          <Code>{`curl -X POST -b "your-session-cookie" \\
+  -F "file=@./contract.pdf" \\
+  -F "aiProcessingConsent=true" \\
+  "${base}/api/documents"`}</Code>
         </section>
 
         <section className="mb-12">

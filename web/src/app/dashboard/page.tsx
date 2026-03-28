@@ -75,6 +75,13 @@ export default async function DashboardPage() {
   const stats = await getStats(user.id, supabase)
   const recentDocs = await getRecentDocuments(user.id, supabase)
 
+  const { data: profile } = await supabase
+    .from("users")
+    .select("ai_processing_consent_at")
+    .eq("id", user.id)
+    .maybeSingle()
+  const hasAiProcessingConsent = Boolean(profile?.ai_processing_consent_at)
+
   const statCards = [
     { label: m.stats.totalAnalyses, value: stats.totalAnalyses, icon: FileText, color: "text-primary bg-primary/10" },
     { label: m.stats.thisMonth, value: stats.thisMonth, icon: TrendingUp, color: "text-green-600 bg-emerald-500/10" },
@@ -97,6 +104,8 @@ export default async function DashboardPage() {
             ...m.upload,
             fileTypes: interpolate(m.upload.fileTypes, { maxMb: UPLOAD_MAX_FILE_MB }),
           }}
+          hasAiProcessingConsent={hasAiProcessingConsent}
+          consent={messages.aiProcessingConsent}
         />
       </div>
 

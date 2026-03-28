@@ -1,5 +1,9 @@
 """
-AI Extractor service — core contract analysis using OpenAI GPT-4o.
+AI Extractor — contract analysis via the OpenAI-compatible Chat Completions API.
+
+Default: OpenAI (api.openai.com). Alternatives:
+- Azure OpenAI: set AZURE_OPENAI_ENDPOINT (+ AZURE_OPENAI_API_KEY or OPENAI_API_KEY).
+- Private / VPS (vLLM, LiteLLM, etc.): set OPENAI_BASE_URL to the proxy base; OPENAI_MODEL* = deployment names.
 """
 
 import os
@@ -7,8 +11,9 @@ import re
 import json
 import asyncio
 import logging
+from typing import Union
 from json import JSONDecodeError
-from openai import OpenAI, APIError, APIConnectionError, APITimeoutError, RateLimitError
+from openai import OpenAI, AzureOpenAI, APIError, APIConnectionError, APITimeoutError, RateLimitError
 from services.chunked_pipeline import run_chunked_extraction
 from services.pdf_parser import extract_text_from_url
 from services.document_text_safety import sanitize_extracted_text
@@ -18,7 +23,7 @@ from services.text_quality import assess_extracted_text_quality
 
 logger = logging.getLogger(__name__)
 
-openai_client: OpenAI | None = None
+openai_client: Union[OpenAI, AzureOpenAI, None] = None
 
 OPENAI_RETRIES = max(1, int(os.getenv("OPENAI_MAX_RETRIES", "5")))
 OPENAI_TIMEOUT_SEC = float(os.getenv("OPENAI_CALL_TIMEOUT_SEC", "180"))
@@ -112,14 +117,32 @@ def _openai_transient(exc: BaseException) -> bool:
             return True
     return False
 
-def _get_client() -> OpenAI:
+def _get_client() -> Union[OpenAI, AzureOpenAI]:
     global openai_client
     if openai_client is None:
-        key = os.getenv("OPENAI_API_KEY")
-        if not key:
-            raise RuntimeError("OPENAI_API_KEY not set")
-        # Retries and 429 backoff are handled in _call_openai (uses API "try again in Xs").
-        openai_client = OpenAI(api_key=key, max_retries=0)
+        azure_endpoint = (os.getenv("AZURE_OPENAI_ENDPOINT") or "").strip()
+        if azure_endpoint:
+            key = (os.getenv("AZURE_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") or "").strip()
+            if not key:
+                raise RuntimeError(
+                    "AZURE_OPENAI_API_KEY or OPENAI_API_KEY required when AZURE_OPENAI_ENDPOINT is set"
+                )
+            api_ver = (os.getenv("AZURE_OPENAI_API_VERSION") or "2024-02-01").strip()
+            openai_client = AzureOpenAI(
+                azure_endpoint=azure_endpoint,
+                api_key=key,
+                api_version=api_ver,
+                max_retries=0,
+            )
+        else:
+            key = os.getenv("OPENAI_API_KEY")
+            if not key:
+                raise RuntimeError("OPENAI_API_KEY not set")
+            base_url = (os.getenv("OPENAI_BASE_URL") or "").strip()
+            kw: dict = {"api_key": key, "max_retries": 0}
+            if base_url:
+                kw["base_url"] = base_url
+            openai_client = OpenAI(**kw)
     return openai_client
 
 

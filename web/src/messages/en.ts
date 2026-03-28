@@ -11,6 +11,11 @@ export const messagesEn = {
     dark: "Dark",
     system: "System",
   },
+  aiProcessingConsent: {
+    label: "I agree to AI processing of my contracts",
+    hint: "Uploaded contract text is extracted and sent to our analysis pipeline, including the AI provider configured for this deployment (for example OpenAI or Azure OpenAI). Do not upload documents you are not authorized to share. This is not legal advice.",
+    required: "Confirm AI processing to continue.",
+  },
   nav: {
     dashboard: "Dashboard",
     documents: "Documents",
@@ -274,6 +279,8 @@ export const messagesEn = {
           "This file exceeds the upload limit set for Storage in your Supabase project (bucket or global limit). In the Supabase dashboard, raise the file size limit for the contracts bucket (or project default) to at least match the app, or use a smaller file.",
         saveFailed: "Could not save the document. Please try again.",
         setupFailed: "Your account is not fully set up yet. Try again or contact support.",
+        consentRequired:
+          "Accept AI processing above to upload. Contract text is analyzed using configured AI services.",
       },
     },
     onboarding: {
@@ -604,7 +611,8 @@ export const messagesEn = {
     documentsListHeading: "GET /api/documents",
     documentsListBody: "JSON list of your documents (limit 50). Requires session.",
     documentsPostHeading: "POST /api/documents",
-    documentsPostBody: "Multipart form field `file` — upload and enqueue analysis. Requires session.",
+    documentsPostBody:
+      "Multipart: `file` (PDF, DOCX, TXT). If you have not yet accepted AI processing in the web app, add form field `aiProcessingConsent=true` once. Requires session.",
     documentGetHeading: "GET /api/documents/[id]",
     documentGetBody: "JSON `{ document, analysis }` for one owned document. Requires session.",
     documentDeleteHeading: "DELETE /api/documents/[id]",

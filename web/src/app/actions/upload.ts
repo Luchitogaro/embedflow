@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { ensureUserAndOrg } from "@/lib/ensure-user-org"
+import { recordAiProcessingConsentNow } from "@/lib/ai-consent-server"
 import { getLocale, getMessagesForRequest } from "@/lib/i18n/server"
 import { localeForWorkerAnalysis } from "@/lib/worker-locale"
 import { getWorkerUrl, workerAuthHeaders } from "@/lib/worker-auth"
@@ -27,6 +28,22 @@ export async function uploadDocument(formData: FormData): Promise<UploadDocument
 
     if (!user) return { error: e.unauthorized }
 
+    let userData: Awaited<ReturnType<typeof ensureUserAndOrg>>
+    try {
+      userData = await ensureUserAndOrg(user.id, user.email ?? "", user)
+    } catch {
+      return { error: e.setupFailed }
+    }
+
+    const formConsentAck = formData.get("aiProcessingConsent") === "true"
+    if (!userData.ai_processing_consent_at) {
+      if (!formConsentAck) {
+        return { error: e.consentRequired }
+      }
+      const ok = await recordAiProcessingConsentNow(supabase, user.id)
+      if (!ok) return { error: e.saveFailed }
+    }
+
     const file = formData.get("file") as File | null
     if (!file) return { error: e.noFile }
 
@@ -40,13 +57,6 @@ export async function uploadDocument(formData: FormData): Promise<UploadDocument
       "text/plain",
     ]
     if (!allowedTypes.includes(file.type)) return { error: e.unsupportedType }
-
-    let userData: Awaited<ReturnType<typeof ensureUserAndOrg>>
-    try {
-      userData = await ensureUserAndOrg(user.id, user.email ?? "")
-    } catch {
-      return { error: e.setupFailed }
-    }
 
     const limitErr = await uploadPlanLimitMessageIfExceeded(
       supabase,
