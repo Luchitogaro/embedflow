@@ -61,6 +61,7 @@ export const messagesEs: Messages = {
     minPassword: "Mín. 8 caracteres",
     showPassword: "Mostrar contraseña",
     hidePassword: "Ocultar contraseña",
+    viewPlansOnGarSaaS: "Planes y precios en GarSaaS",
   },
   landing: {
     signIn: "Iniciar sesión",
@@ -143,7 +144,8 @@ export const messagesEs: Messages = {
       },
     ],
     pricingTitle: "Precios claros",
-    pricingSub: "Empieza gratis. Mejora cuando lo necesites.",
+    pricingSub:
+      "Colombia (Wompi): cobro en COP según catálogo — $99.000 / $199.000 / $599.000 al mes (≈ US$24 / $47 / $143 con TRM ~4.200). Otros mercados pueden usar Stripe; el USD es orientativo.",
     pricingPlans: [
       {
         name: "Gratis",
@@ -163,8 +165,8 @@ export const messagesEs: Messages = {
       },
       {
         name: "Starter",
-        price: "$29",
-        per: "/usuario/mes",
+        price: "$99.000",
+        per: "COP/mes · ~US$24 ref.",
         badge: "Más popular",
         highlight: false,
         cta: "Empezar",
@@ -178,8 +180,8 @@ export const messagesEs: Messages = {
       },
       {
         name: "Pro",
-        price: "$49",
-        per: "/usuario/mes",
+        price: "$199.000",
+        per: "COP/mes · ~US$47 ref.",
         badge: null as string | null,
         highlight: true,
         cta: "Empezar",
@@ -194,8 +196,8 @@ export const messagesEs: Messages = {
       },
       {
         name: "Equipo",
-        price: "$149",
-        per: "/mes",
+        price: "$599.000",
+        per: "COP/mes · ~US$143 ref.",
         badge: null as string | null,
         highlight: false,
         cta: "Empezar",
@@ -519,8 +521,8 @@ export const messagesEs: Messages = {
       {
         id: "starter",
         name: "Starter",
-        price: "$29",
-        period: "/usuario/mes",
+        price: "$99.000",
+        period: "COP/mes · ~US$24 ref.",
         features: [
           "20 docs/mes",
           "Todo lo del plan Gratis",
@@ -531,8 +533,8 @@ export const messagesEs: Messages = {
       {
         id: "pro",
         name: "Pro",
-        price: "$49",
-        period: "/usuario/mes",
+        price: "$199.000",
+        period: "COP/mes · ~US$47 ref.",
         features: [
           "Docs ilimitados",
           "Enlaces + PDF de análisis",
@@ -544,8 +546,8 @@ export const messagesEs: Messages = {
       {
         id: "team",
         name: "Equipo",
-        price: "$149",
-        period: "/mes",
+        price: "$599.000",
+        period: "COP/mes · ~US$143 ref.",
         features: ["Todo lo de Pro", "5 plazas", "Panel org.", "Reglas de riesgo", "SSO"],
       },
     ],

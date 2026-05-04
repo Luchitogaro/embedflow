@@ -5,13 +5,15 @@ import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import type { Messages } from "@/messages/en"
+import type { Locale } from "@/lib/i18n/config"
+import { garsaasProductPricingUrl } from "@/lib/garsaas-marketing"
 import { interpolate } from "@/lib/i18n/interpolate"
 import { AI_PROCESSING_CONSENT_VERSION } from "@/lib/ai-processing-consent"
 
 type AuthCopy = Messages["auth"]
 type ConsentCopy = Messages["aiProcessingConsent"]
 
-export function LoginForm({ t, consent }: { t: AuthCopy; consent: ConsentCopy }) {
+export function LoginForm({ t, consent, locale }: { t: AuthCopy; consent: ConsentCopy; locale: Locale }) {
   const supabase = createClient()
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
@@ -196,6 +198,17 @@ export function LoginForm({ t, consent }: { t: AuthCopy; consent: ConsentCopy })
         <Link href="/signup" className="font-medium text-primary hover:underline">
           {t.signUp}
         </Link>
+      </p>
+
+      <p className="mt-4 text-center">
+        <a
+          href={garsaasProductPricingUrl(locale, "embedflow")}
+          className="text-xs font-medium text-primary hover:underline"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {t.viewPlansOnGarSaaS}
+        </a>
       </p>
     </div>
   )

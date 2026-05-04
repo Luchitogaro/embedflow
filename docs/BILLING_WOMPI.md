@@ -42,7 +42,7 @@ Mantén el historial de migraciones Supabase como fuente de verdad del esquema c
 
 El tope de envíos que cuentan para la cuota (**documentos con análisis `done` en el mes**) está en código:
 
-- **`web/src/lib/plan-limits.ts`** — `PLAN_DOC_LIMITS.free` (valor actual: **2** documentos/mes). Debe coincidir con los textos de **`web/src/messages/es.ts`**, **`en.ts`**, **`pt.ts`** y con cualquier pricing público en el landing GarSaaS.
+- **`web/src/lib/plan-limits.ts`** — `PLAN_DOC_LIMITS.free` (valor actual: **2** documentos/mes). Debe coincidir con los textos de **`web/src/messages/es.ts`**, **`en.ts`**, **`pt.ts`**, con la migración **`013_wompi_billing.sql`** (Starter / Pro / Team en COP: **99.000 / 199.000 / 599.000** mensual, `amount_in_cents` = pesos × 100) y con el pricing público en **`garsaas/lib/productContent.ts`** (producto Embedflow).
 
 ### Cambio de precios
 

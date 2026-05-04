@@ -59,6 +59,7 @@ export const messagesEn = {
     minPassword: "Min 8 characters",
     showPassword: "Show password",
     hidePassword: "Hide password",
+    viewPlansOnGarSaaS: "Plans & pricing on GarSaaS",
   },
   landing: {
     signIn: "Sign in",
@@ -140,7 +141,8 @@ export const messagesEn = {
       },
     ],
     pricingTitle: "Simple, transparent pricing",
-    pricingSub: "Start free. Upgrade when you need more.",
+    pricingSub:
+      "Colombia (Wompi): paid tiers bill in COP as in our catalog — COP 99k / 199k / 599k per month (≈ US$24 / $47 / $143 at ~4,200 TRM). Elsewhere, Stripe or other providers may apply; USD is indicative.",
     pricingPlans: [
       {
         name: "Free",
@@ -160,8 +162,8 @@ export const messagesEn = {
       },
       {
         name: "Starter",
-        price: "$29",
-        per: "/user/mo",
+        price: "COP 99,000",
+        per: "/mo · ~US$24 ref.",
         badge: "Most popular",
         highlight: false,
         cta: "Get started",
@@ -175,8 +177,8 @@ export const messagesEn = {
       },
       {
         name: "Pro",
-        price: "$49",
-        per: "/user/mo",
+        price: "COP 199,000",
+        per: "/mo · ~US$47 ref.",
         badge: null as string | null,
         highlight: true,
         cta: "Get started",
@@ -191,8 +193,8 @@ export const messagesEn = {
       },
       {
         name: "Team",
-        price: "$149",
-        per: "/month",
+        price: "COP 599,000",
+        per: "/mo · ~US$143 ref.",
         badge: null as string | null,
         highlight: false,
         cta: "Get started",
@@ -516,8 +518,8 @@ export const messagesEn = {
       {
         id: "starter",
         name: "Starter",
-        price: "$29",
-        period: "/user/mo",
+        price: "COP 99,000",
+        period: "/mo · ~US$24 ref.",
         features: [
           "20 docs/month",
           "Everything in Free",
@@ -528,8 +530,8 @@ export const messagesEn = {
       {
         id: "pro",
         name: "Pro",
-        price: "$49",
-        period: "/user/mo",
+        price: "COP 199,000",
+        period: "/mo · ~US$47 ref.",
         features: [
           "Unlimited docs",
           "Share links + analysis PDF",
@@ -541,8 +543,8 @@ export const messagesEn = {
       {
         id: "team",
         name: "Team",
-        price: "$149",
-        period: "/month",
+        price: "COP 599,000",
+        period: "/mo · ~US$143 ref.",
         features: [
           "Everything in Pro",
           "5 seats included",
