@@ -5,7 +5,8 @@ import { ensureUserAndOrg } from "@/lib/ensure-user-org"
 import { getBillingProvider } from "@/lib/billing-config"
 
 export async function POST() {
-  if (getBillingProvider() === "mercadopago") {
+  const provider = getBillingProvider()
+  if (provider === "mercadopago" || provider === "wompi") {
     return NextResponse.json(
       { error: "Billing portal is only available when using Stripe." },
       { status: 400 }

@@ -64,14 +64,14 @@ export const messagesEn = {
     signIn: "Sign in",
     startFree: "Start free",
     badge:
-      "Public beta — 3 free analyses/mo · Web dashboard on Free · Integrations & programmatic HTTP API on Pro+",
+      "Public beta — 2 free analyses/mo · Web dashboard on Free · Integrations & programmatic HTTP API on Pro+",
     heroLine1: "Stop reading contracts.",
     heroLine2: "Start understanding deals.",
     heroSub:
       "Upload a PDF (or DOCX/TXT), get a structured deal brief—essentials, key points, risk and compliance exposure. Analysis runs in about a minute, in your language. Use everything from the web app on Free; deal pitch from Starter; share links, analysis PDF, Slack, Integrations, and script/curl API access from Pro.",
     ctaPrimary: "Start free — no credit card",
     ctaSecondary: "See how it works",
-    heroFootnote: "3 docs free per month · No credit card required",
+    heroFootnote: "2 docs free per month · No credit card required",
     socialProof: "Trusted by sales teams at",
     featuresTitle: "Everything you need to close faster",
     featuresSub: "Upload. Analyze. Understand. No legal degree required.",
@@ -150,7 +150,7 @@ export const messagesEn = {
         highlight: false,
         cta: "Start free",
         features: [
-          "3 docs/month",
+          "2 docs/month",
           "Structured brief (essentials & risks)",
           "Key terms",
           "Web dashboard only — no Integrations page",
@@ -222,7 +222,7 @@ export const messagesEn = {
       },
       {
         q: "Do I need a credit card to start?",
-        a: "No. The free tier gives you 3 analyses per month with no credit card required.",
+        a: "No. The free tier gives you 2 analyses per month with no credit card required.",
       },
       {
         q: "Can I integrate with Salesforce or HubSpot?",
@@ -234,7 +234,7 @@ export const messagesEn = {
       },
     ],
     ctaTitle: "Start understanding your deals today.",
-    ctaSub: "3 free analyses per month. No credit card. Cancel anytime.",
+    ctaSub: "2 free analyses per month. No credit card. Cancel anytime.",
     ctaButton: "Get started free",
     footerCopyright: "© 2026 GaRSaaS. All rights reserved.",
     footerTrademark: "Embedflow™ is a trademark of GaRSaaS™.",
@@ -475,6 +475,8 @@ export const messagesEn = {
       "Subscribe to a paid plan to manage billing in the Stripe portal.",
     portalHintMercadoPago:
       "Mercado Pago checkout: renew from this page when your paid period ends (no Stripe portal).",
+    portalHintWompi:
+      "Wompi (Colombia): upgrade from this page; there is no Stripe-style portal. Renew before access expires.",
     portalHintRole: "Only organization owners and admins can manage billing.",
     manageSubscription: "Manage subscription",
     opening: "Opening…",
@@ -488,7 +490,7 @@ export const messagesEn = {
     unlimited: "(unlimited)",
     currentPlanLabel: "Current plan",
     planPaidThroughPrefix: "Paid access through",
-    planPaidThroughSuffix: "Renew with Mercado Pago to keep your plan.",
+    planPaidThroughSuffix: "Renew before this date to keep paid access.",
     currentPlanBadge: "Current plan",
     planRecommendedBadge: "Recommended",
     devPlanOverrideBanner:
@@ -504,7 +506,7 @@ export const messagesEn = {
         price: "$0",
         period: "/month",
         features: [
-          "3 docs/month",
+          "2 docs/month",
           "Structured brief & risk flags",
           "Key terms (no deal pitch on Free)",
           "Web dashboard only — no Integrations",
@@ -624,10 +626,10 @@ export const messagesEn = {
       "Body: `{ \"action\": \"create\" | \"revoke\" }` for share links. Requires session. Creating a link requires Pro+; revoke allowed anytime. `403` + `plan_share` if the org is not on a sufficient plan.",
     billingHeading: "Billing",
     billingBody:
-      "POST /api/billing/checkout — Stripe Checkout or Mercado Pago redirect URL depending on `BILLING_PROVIDER`. POST /api/billing/portal — Stripe Customer Portal only when using Stripe. Session required; org owner/admin where enforced in UI.",
+      "POST /api/billing/checkout — Stripe Checkout, Mercado Pago redirect, or Wompi checkout URL depending on `BILLING_PROVIDER`. POST /api/billing/portal — Stripe Customer Portal only when using Stripe. Session required; org owner/admin where enforced in UI.",
     webhooksHeading: "POST /api/webhooks/stripe",
     webhooksBody:
-      "Stripe webhook (signature verification). POST /api/webhooks/mercadopago — Mercado Pago payment notifications (`x-signature`). Not for direct client use.",
+      "Stripe webhook (signature verification). POST /api/webhooks/mercadopago — Mercado Pago (`x-signature`). POST /api/webhooks/wompi — Wompi transaction events (forwarded via GarSaaS router). Not for direct client use.",
     workerHeading: "Worker (FastAPI)",
     workerBody:
       "POST {WORKER_URL}/jobs/ with JSON `{ document_id, file_url, user_id, org_id?, locale? }` is invoked by the Next.js app after upload. Protect WORKER_URL at the network layer and require WORKER_SHARED_SECRET; do not expose keys in the browser.",

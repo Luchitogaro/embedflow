@@ -6,6 +6,8 @@ import { isBillablePlan, stripePriceIdForPlan } from "@/lib/stripe-prices"
 import { ensureUserAndOrg } from "@/lib/ensure-user-org"
 import { getBillingProvider } from "@/lib/billing-config"
 import { createCheckoutPreference } from "@/lib/mercadopago-client"
+import { createServiceRoleClient } from "@/lib/supabase/admin"
+import { createEmbedflowWompiCheckout } from "@/lib/billing/wompi-checkout"
 
 export async function POST(req: NextRequest) {
   const provider = getBillingProvider()
@@ -60,6 +62,30 @@ export async function POST(req: NextRequest) {
   }
 
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin).replace(/\/$/, "")
+
+  if (provider === "wompi") {
+    try {
+      const admin = createServiceRoleClient()
+      const result = await createEmbedflowWompiCheckout(admin, {
+        orgId: org.id,
+        plan,
+        appUrl,
+        customerEmail: user.email,
+      })
+      if (!result.ok) {
+        return NextResponse.json({ error: result.error }, { status: 400 })
+      }
+      return NextResponse.json({
+        url: result.checkoutUrl,
+        reference: result.reference,
+        provider: "wompi",
+      })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Wompi checkout failed"
+      console.error("billing/checkout wompi:", e)
+      return NextResponse.json({ error: msg }, { status: 503 })
+    }
+  }
 
   if (provider === "mercadopago") {
     try {

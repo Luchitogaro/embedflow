@@ -110,7 +110,9 @@ export default async function BillingPage() {
               : canManageBilling
                 ? billingProvider === "mercadopago"
                   ? b.portalHintMercadoPago
-                  : b.portalHintSubscribe
+                  : billingProvider === "wompi"
+                    ? b.portalHintWompi
+                    : b.portalHintSubscribe
                 : b.portalHintRole}
           </p>
         )}
@@ -267,7 +269,10 @@ export default async function BillingPage() {
               ) : null}
             </div>
           </div>
-          {billingProvider === "mercadopago" && planExpiresAt && currentPlan !== "free" && !planOverrideOn ? (
+          {(billingProvider === "mercadopago" || billingProvider === "wompi") &&
+          planExpiresAt &&
+          currentPlan !== "free" &&
+          !planOverrideOn ? (
             <p className="mt-5 text-xs text-muted-foreground border-t border-border pt-4">
               {b.planPaidThroughPrefix}{" "}
               <span className="font-medium text-foreground">

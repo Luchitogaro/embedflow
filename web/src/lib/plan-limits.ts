@@ -1,7 +1,7 @@
 export type Plan = "free" | "starter" | "pro" | "team" | "enterprise"
 
 export const PLAN_DOC_LIMITS: Record<Plan, number | null> = {
-  free: 3,
+  free: 2,
   starter: 20,
   pro: null,
   team: null,

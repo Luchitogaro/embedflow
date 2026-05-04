@@ -66,14 +66,14 @@ export const messagesEs: Messages = {
     signIn: "Iniciar sesión",
     startFree: "Empezar gratis",
     badge:
-      "Beta pública — 3 análisis/mes gratis · Panel web en Gratis · Integraciones y API HTTP programática en Pro+",
+      "Beta pública — 2 análisis/mes gratis · Panel web en Gratis · Integraciones y API HTTP programática en Pro+",
     heroLine1: "Deja de leer contratos.",
     heroLine2: "Empieza a entender los acuerdos.",
     heroSub:
       "Sube un PDF (o DOCX/TXT) y obtén un resumen estructurado—lo esencial, puntos clave, riesgos y exposición de cumplimiento. El análisis tarda ~1 minuto, en tu idioma. Todo desde la web en Gratis; pitch desde Starter; enlace de lectura, PDF, Slack, Integraciones y acceso API programático (curl/scripts) desde Pro.",
     ctaPrimary: "Empezar gratis — sin tarjeta",
     ctaSecondary: "Cómo funciona",
-    heroFootnote: "3 documentos gratis al mes · Sin tarjeta",
+    heroFootnote: "2 documentos gratis al mes · Sin tarjeta",
     socialProof: "Equipos de ventas que confían en nosotros",
     featuresTitle: "Todo lo que necesitas para cerrar antes",
     featuresSub: "Sube. Analiza. Entiende. Sin ser abogado.",
@@ -153,7 +153,7 @@ export const messagesEs: Messages = {
         highlight: false,
         cta: "Empezar gratis",
         features: [
-          "3 docs/mes",
+          "2 docs/mes",
           "Resumen estructurado (esencial y riesgos)",
           "Términos clave",
           "Solo panel web — sin página de Integraciones",
@@ -225,7 +225,7 @@ export const messagesEs: Messages = {
       },
       {
         q: "¿Necesito tarjeta para empezar?",
-        a: "No. El plan gratuito incluye 3 análisis al mes sin tarjeta.",
+        a: "No. El plan gratuito incluye 2 análisis al mes sin tarjeta.",
       },
       {
         q: "¿Integración con Salesforce o HubSpot?",
@@ -237,7 +237,7 @@ export const messagesEs: Messages = {
       },
     ],
     ctaTitle: "Empieza a entender tus acuerdos hoy.",
-    ctaSub: "3 análisis gratis al mes. Sin tarjeta. Cancela cuando quieras.",
+    ctaSub: "2 análisis gratis al mes. Sin tarjeta. Cancela cuando quieras.",
     ctaButton: "Empezar gratis",
     footerCopyright: "© 2026 GaRSaaS. Todos los derechos reservados.",
     footerTrademark: "Embedflow™ es una marca comercial de GaRSaaS™.",
@@ -478,6 +478,8 @@ export const messagesEs: Messages = {
     portalHintSubscribe: "Suscríbete a un plan de pago para gestionar la facturación en el portal de Stripe.",
     portalHintMercadoPago:
       "Cobro con Mercado Pago: renueva desde esta página cuando termine el periodo pagado (no hay portal de Stripe).",
+    portalHintWompi:
+      "Wompi (Colombia): mejora el plan desde esta página; no hay portal tipo Stripe. Renueva antes de que venza el acceso.",
     portalHintRole: "Solo propietarios y administradores pueden gestionar la facturación.",
     manageSubscription: "Gestionar suscripción",
     opening: "Abriendo…",
@@ -491,7 +493,7 @@ export const messagesEs: Messages = {
     unlimited: "(ilimitado)",
     currentPlanLabel: "Plan actual",
     planPaidThroughPrefix: "Acceso pagado hasta",
-    planPaidThroughSuffix: "Renueva con Mercado Pago para mantener el plan.",
+    planPaidThroughSuffix: "Renueva antes de esta fecha para mantener el acceso de pago.",
     currentPlanBadge: "Plan actual",
     planRecommendedBadge: "Recomendado",
     devPlanOverrideBanner:
@@ -507,7 +509,7 @@ export const messagesEs: Messages = {
         price: "$0",
         period: "/mes",
         features: [
-          "3 docs/mes",
+          "2 docs/mes",
           "Resumen y alertas de riesgo",
           "Términos clave (sin pitch en Gratis)",
           "Solo panel web — sin Integraciones",
@@ -621,10 +623,10 @@ export const messagesEs: Messages = {
       "Cuerpo: `{ \"action\": \"create\" | \"revoke\" }` para enlaces de lectura. Requiere sesión. Crear enlace exige Pro+; revocar siempre permitido. `403` + `plan_share` si el plan no alcanza.",
     billingHeading: "Facturación",
     billingBody:
-      "POST /api/billing/checkout — Stripe Checkout o URL de Mercado Pago según `BILLING_PROVIDER`. POST /api/billing/portal — portal de Stripe solo con Stripe. Requiere sesión; owner/admin donde la UI lo exija.",
+      "POST /api/billing/checkout — Stripe Checkout, Mercado Pago o URL Wompi según `BILLING_PROVIDER`. POST /api/billing/portal — portal de Stripe solo con Stripe. Requiere sesión; owner/admin donde la UI lo exija.",
     webhooksHeading: "POST /api/webhooks/stripe",
     webhooksBody:
-      "Webhook de Stripe (firma). POST /api/webhooks/mercadopago — notificaciones de pago Mercado Pago (`x-signature`). No para uso directo desde el cliente.",
+      "Webhook de Stripe (firma). POST /api/webhooks/mercadopago — Mercado Pago (`x-signature`). POST /api/webhooks/wompi — eventos Wompi (reenviados vía router GarSaaS). No para uso directo desde el cliente.",
     workerHeading: "Worker (FastAPI)",
     workerBody:
       "POST {WORKER_URL}/jobs/ con JSON `{ document_id, file_url, user_id, org_id?, locale? }` lo invoca Next tras la subida. Protege WORKER_URL en red y exige WORKER_SHARED_SECRET; no expongas claves en el navegador.",
