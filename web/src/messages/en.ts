@@ -478,15 +478,17 @@ export const messagesEn = {
     portalHintMercadoPago:
       "Mercado Pago checkout: renew from this page when your paid period ends (no Stripe portal).",
     portalHintWompi:
-      "Wompi (Colombia): upgrade from this page; there is no Stripe-style portal. Renew before access expires.",
+      "Wompi (Colombia): pick another plan on the card (upgrade or downgrade between paid tiers); there is no Stripe-style portal. Renew before access expires.",
     portalHintRole: "Only organization owners and admins can manage billing.",
     manageSubscription: "Manage subscription",
     opening: "Opening…",
     currentPlan: "Current plan",
     upgrade: "Upgrade",
+    changePaidPlan: "Change plan",
     defaultFree: "Default",
     contactSales: "Contact sales",
-    downgradeHint: "Use the billing portal to change or cancel your plan.",
+    downgradeHint:
+      "With Stripe, use the billing portal to downgrade or cancel. (Wompi/Mercado Pago: switch plans via checkout on each card.)",
     usageTitle: "Usage this month",
     usageDocs: "Documents analyzed",
     unlimited: "(unlimited)",

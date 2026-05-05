@@ -219,17 +219,22 @@ export default async function BillingPage() {
                   </p>
                 ) : (
                   (() => {
-                    const { showCheckout, disabledReason } = planCheckoutState(
+                    const allowPaidTierSwitch =
+                      billingProvider === "wompi" || billingProvider === "mercadopago"
+                    const { showCheckout, disabledReason, checkoutIntent } = planCheckoutState(
                       plan.id as Plan,
                       currentPlan,
-                      b.downgradeHint
+                      b.downgradeHint,
+                      { allowPaidTierSwitch }
                     )
                     if (showCheckout) {
+                      const checkoutLabel =
+                        checkoutIntent === "switch_paid_plan" ? b.changePaidPlan : b.upgrade
                       return (
                         <CheckoutButton
                           plan={plan.id as "starter" | "pro" | "team"}
                           disabled={!canManageBilling}
-                          label={b.upgrade}
+                          label={checkoutLabel}
                           strings={checkoutStrings}
                         />
                       )

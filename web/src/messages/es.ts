@@ -481,15 +481,18 @@ export const messagesEs: Messages = {
     portalHintMercadoPago:
       "Cobro con Mercado Pago: renueva desde esta página cuando termine el periodo pagado (no hay portal de Stripe).",
     portalHintWompi:
-      "Wompi (Colombia): mejora el plan desde esta página; no hay portal tipo Stripe. Renueva antes de que venza el acceso.",
+      "Wompi (Colombia): elige otro plan en la tarjeta (subir o bajar entre planes de pago); no hay portal tipo Stripe. Renueva antes de que venza el acceso.",
     portalHintRole: "Solo propietarios y administradores pueden gestionar la facturación.",
     manageSubscription: "Gestionar suscripción",
     opening: "Abriendo…",
     currentPlan: "Plan actual",
     upgrade: "Mejorar plan",
+    /** Checkout Wompi/Mercado Pago: cambiar a un plan de pago distinto (también bajar de tier). */
+    changePaidPlan: "Cambiar plan",
     defaultFree: "Predeterminado",
     contactSales: "Contactar ventas",
-    downgradeHint: "Usa el portal de facturación para cambiar o cancelar tu plan.",
+    downgradeHint:
+      "Con Stripe, usa el portal de facturación para bajar de plan o cancelar. (Wompi/Mercado Pago: cambia de plan desde el checkout en cada tarjeta.)",
     usageTitle: "Uso este mes",
     usageDocs: "Documentos analizados",
     unlimited: "(ilimitado)",
