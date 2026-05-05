@@ -19,7 +19,7 @@ Tras añadir `NEXT_PUBLIC_*`, haz **redeploy con build** para que la variable qu
 
 ## Supabase
 
-Aplicar migración **`013_wompi_billing.sql`** (y migraciones posteriores en `supabase/migrations/`):
+Aplicar migraciones **`013_wompi_billing.sql`** y **`014_garsaas_billing_sync.sql`** (y posteriores en `supabase/migrations/`):
 
 - Tablas `subscription_plan_catalog` y `payment_intents`.
 - Extiende `organizations.billing_provider` con el valor **`wompi`**.
@@ -68,6 +68,16 @@ El panel Wompi debe apuntar solo a `https://garsaas.io/api/webhooks/wompi` (o el
 4. Wompi envía el evento al router → EmbedFlow `/api/webhooks/wompi` → actualiza `organizations` (`plan`, `billing_provider`, `plan_expires_at`) y marca el intent **APPROVED**.
 
 La fuente de verdad del plan pagado es el **webhook**, no solo la redirección.
+
+## Producción (tier 1): seguridad y reintentos GarSaaS
+
+1. **Migración `014_garsaas_billing_sync.sql`** — columnas en `payment_intents` para `garsaas_invoice_id`, reintentos y `garsaas_no_upstream` si no configuraste GarSaaS.
+2. **`WOMPI_EVENTS_SECRET`** — secreto de **eventos** del Dashboard Wompi (no es la llave privada ni `WOMPI_INTEGRITY_SECRET`). Con él, `POST /api/webhooks/wompi` rechaza eventos con checksum inválido (`401`). Sin variable: en producción se registra advertencia; conviene definirla antes de ir live.
+3. **GarSaaS tras pago** — el webhook intenta `POST` al landing; si falla red, programa `garsaas_notify_next_at` con backoff.
+4. **Cron `GET /api/cron/garsaas-billing-sync`** — cabecera `Authorization: Bearer <CRON_SECRET>`. Reintenta intents `APPROVED` sin `garsaas_invoice_id`. Programar en Railway (cron HTTP) o fusionar `vercel.cron.example.json` en `vercel.json` si despliegas en Vercel.
+5. **Observabilidad** — logs `[billing]` incluyen `reference` y `transaction_id`; el cliente envía `X-Correlation-Id` a GarSaaS.
+
+BabyFirst / AgroBrain pueden replicar el mismo patrón (verify checksum + cola/reintentos en su BD).
 
 ## Referencias cruzadas
 
