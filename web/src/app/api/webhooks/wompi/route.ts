@@ -5,6 +5,7 @@ import {
   applyApprovedWompiPayment,
   markWompiIntentDeclined,
 } from "@/lib/billing/apply-wompi-payment"
+import { notifyGarsaasDianBilling } from "@/lib/billing/notify-garsaas-dian"
 
 export const runtime = "nodejs"
 
@@ -45,6 +46,13 @@ export async function POST(req: Request) {
     const result = await applyApprovedWompiPayment(admin, tx.reference, tx.transactionId)
     if (!result.ok && result.reason === "INTENT_NOT_FOUND") {
       return NextResponse.json({ ok: true, ignored: true })
+    }
+    if (result.ok) {
+      await notifyGarsaasDianBilling(admin, {
+        reference: tx.reference,
+        transactionId: tx.transactionId,
+        paidAtIso: new Date().toISOString(),
+      })
     }
   } else if (declined) {
     await markWompiIntentDeclined(admin, tx.reference, tx.transactionId)
