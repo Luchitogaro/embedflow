@@ -76,6 +76,8 @@ export async function updateOrgBillingInvoiceProfile(formData: FormData) {
       billing_phone: data.billingPhone,
       billing_country: data.billingCountry,
       billing_address_line: data.billingAddressLine,
+      billing_profile_updated_at: new Date().toISOString(),
+      billing_profile_updated_by: user.id,
     })
     .eq("id", profile.org_id)
 

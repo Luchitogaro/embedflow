@@ -75,14 +75,17 @@ export default async function BillingPage() {
     billing_phone: string | null
     billing_country: string | null
     billing_address_line: string | null
+    billing_profile_updated_at: string | null
+    billing_profile_updated_by: string | null
   }
   let orgRow: OrgRowDb | null = null
+  let invoiceAuditNote: string | null = null
 
   if (userRow?.org_id) {
     const { data: org } = await supabase
       .from("organizations")
       .select(
-        "plan, stripe_customer_id, plan_expires_at, name, billing_tax_id_type, billing_tax_id, billing_legal_name, billing_invoice_email, billing_phone, billing_country, billing_address_line"
+        "plan, stripe_customer_id, plan_expires_at, name, billing_tax_id_type, billing_tax_id, billing_legal_name, billing_invoice_email, billing_phone, billing_country, billing_address_line, billing_profile_updated_at, billing_profile_updated_by"
       )
       .eq("id", userRow.org_id)
       .single()
@@ -104,6 +107,26 @@ export default async function BillingPage() {
         billing_country: o.billing_country,
         billing_address_line: o.billing_address_line,
       })
+
+      if (o.billing_profile_updated_at) {
+        let auditorEmail: string | null = null
+        if (o.billing_profile_updated_by) {
+          const { data: auditor } = await supabase
+            .from("users")
+            .select("email")
+            .eq("id", o.billing_profile_updated_by)
+            .maybeSingle()
+          auditorEmail = auditor?.email ?? null
+        }
+        const loc = locale === "en" ? "en-CO" : locale === "pt" ? "pt-BR" : "es-CO"
+        const ts = new Intl.DateTimeFormat(loc, { dateStyle: "medium", timeStyle: "short" }).format(
+          new Date(o.billing_profile_updated_at)
+        )
+        invoiceAuditNote = interpolate(b.invoiceProfile.auditTrail, {
+          timestamp: ts,
+          email: auditorEmail ?? "—",
+        })
+      }
     }
   }
 
@@ -258,6 +281,7 @@ export default async function BillingPage() {
       {canManageBilling && userRow?.org_id && orgRow && !billingComingSoon ? (
         <BillingInvoiceProfileForm
           strings={b.invoiceProfile}
+          auditNote={invoiceAuditNote}
           initial={{
             billingTaxIdType: orgRow.billing_tax_id_type,
             billingTaxId: orgRow.billing_tax_id,
@@ -433,6 +457,7 @@ export default async function BillingPage() {
           planLabels={planLabelById}
           rows={wompiInvoiceRows}
           historyLimit={BILLING_INVOICE_HISTORY_LIMIT}
+          csvHref={wompiInvoiceRows.length > 0 ? "/api/billing/approved-payments-csv" : null}
         />
       ) : null}
     </div>

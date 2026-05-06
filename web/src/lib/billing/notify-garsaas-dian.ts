@@ -6,6 +6,7 @@ import {
   sendBillingOpsWebhookAlert,
   shouldSendBillingOpsAlert,
 } from "@/lib/billing/ops-webhook-alert"
+import { maybeSendEmbedflowGarsaasInvoiceSyncedEmail } from "@/lib/billing/garsaas-sync-success-email"
 
 /** Emisor acordado — validar NIT/DV con contador antes de producción fiscal plena. */
 const DEFAULT_ISSUER = {
@@ -189,6 +190,9 @@ export async function persistGarsaasNotifyOutcome(
           updated_at: new Date().toISOString(),
         })
         .eq("reference", reference)
+      void maybeSendEmbedflowGarsaasInvoiceSyncedEmail(admin, reference, outcome).catch((err) => {
+        console.error("[billing] GarSaaS sync success email failed", err)
+      })
       return
 
     case "failed": {

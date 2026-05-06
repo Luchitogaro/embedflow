@@ -576,6 +576,7 @@ export const messagesEn = {
       phonePlaceholder: "e.g. +57 300 1234567",
       addressLabel: "Address",
       countryNote: "Billing country: Colombia (CO). Department and city can be added in a later step.",
+      auditTrail: "Tax profile last updated: {timestamp} · {email}",
       save: "Save invoicing details",
       saving: "Saving…",
       savedToast: "Invoicing details saved.",
@@ -632,6 +633,8 @@ export const messagesEn = {
       paginationNext: "Next",
       paginationPrevAria: "Go to previous page",
       paginationNextAria: "Go to next page",
+      exportCsv: "Export CSV",
+      exportCsvAria: "Download approved payments as CSV",
     },
     actions: {
       redirecting: "Redirecting…",

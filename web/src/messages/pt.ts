@@ -573,6 +573,7 @@ export const messagesPt: Messages = {
       phonePlaceholder: "Ex.: +57 300 1234567",
       addressLabel: "Endereço",
       countryNote: "País de faturação: Colômbia (CO). Departamento e cidade poderão ser adicionados depois.",
+      auditTrail: "Última atualização do perfil fiscal: {timestamp} · {email}",
       save: "Salvar dados de faturação",
       saving: "Salvando…",
       savedToast: "Dados de faturação salvos.",
@@ -629,6 +630,8 @@ export const messagesPt: Messages = {
       paginationNext: "Próxima",
       paginationPrevAria: "Ir para a página anterior",
       paginationNextAria: "Ir para a página seguinte",
+      exportCsv: "Exportar CSV",
+      exportCsvAria: "Baixar pagamentos aprovados em CSV",
     },
     actions: {
       redirecting: "Redirecionando…",

@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import Link from "next/link"
+import { ChevronLeft, ChevronRight, Download } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 export type EmbedBillingInvoiceRow = {
@@ -50,6 +51,8 @@ export type EmbedBillingInvoiceHistoryStrings = {
   paginationNext: string
   paginationPrevAria: string
   paginationNextAria: string
+  exportCsv: string
+  exportCsvAria: string
 }
 
 type InvoiceFilter = "all" | "pending" | "error" | "synced"
@@ -149,12 +152,14 @@ export function BillingInvoiceHistory({
   planLabels,
   rows,
   historyLimit,
+  csvHref,
 }: {
   locale: string
   strings: EmbedBillingInvoiceHistoryStrings
   planLabels: Record<string, string>
   rows: EmbedBillingInvoiceRow[]
   historyLimit: number
+  csvHref?: string | null
 }) {
   const [filter, setFilter] = useState<InvoiceFilter>("all")
   const [page, setPage] = useState(1)
@@ -197,8 +202,26 @@ export function BillingInvoiceHistory({
   return (
     <Card className="mt-10 overflow-hidden border-border/80 shadow-sm">
       <CardHeader className="border-b border-border/60 bg-muted/30 pb-4">
-        <CardTitle className="text-base font-semibold">{strings.title}</CardTitle>
-        <CardDescription>{strings.description}</CardDescription>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <CardTitle className="text-base font-semibold">{strings.title}</CardTitle>
+            <CardDescription>{strings.description}</CardDescription>
+          </div>
+          {csvHref ? (
+            <Link
+              href={csvHref}
+              prefetch={false}
+              aria-label={strings.exportCsvAria}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "inline-flex shrink-0 gap-1.5 rounded-xl"
+              )}
+            >
+              <Download className="size-4" aria-hidden />
+              {strings.exportCsv}
+            </Link>
+          ) : null}
+        </div>
       </CardHeader>
       <CardContent className="pt-6">
         {!showGlobalEmpty ? (

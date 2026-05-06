@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [0.2.1] - 2026-05-06
+
+### Added
+
+- **Supabase migration `017_org_billing_profile_audit.sql`** — `billing_profile_updated_at` / `billing_profile_updated_by` en `organizations` para auditoría del perfil fiscal.
+- **Export CSV de cobros aprobados** — `GET /api/billing/approved-payments-csv` (owner/admin); botón en historial de facturación.
+- **Correo opcional tras sync GarSaaS exitoso** — si `BILLING_GARSAAS_SYNC_SUCCESS_EMAIL=true` y `RESEND_API_KEY`, aviso al `billing_invoice_email` de la org (`web/src/lib/email/resend.ts`, `garsaas-sync-success-email.ts`).
+- **Texto de auditoría** en el formulario de datos fiscales cuando existe última actualización.
+
+### Changed
+
+- `updateOrgBillingInvoiceProfile` persiste fecha y usuario de última edición fiscal.
+- `.env.example` — variables Resend y `BILLING_GARSAAS_SYNC_SUCCESS_EMAIL`.
+
+---
+
 ## [0.2.0] - 2026-05-06
 
 ### Added

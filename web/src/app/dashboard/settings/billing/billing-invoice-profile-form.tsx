@@ -37,9 +37,11 @@ export type EmbedOrgInvoiceProfileInitial = {
 export function BillingInvoiceProfileForm({
   strings,
   initial,
+  auditNote,
 }: {
   strings: Messages["billing"]["invoiceProfile"]
   initial: EmbedOrgInvoiceProfileInitial
+  auditNote?: string | null
 }) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
@@ -222,6 +224,12 @@ export function BillingInvoiceProfileForm({
           </fieldset>
 
           <p className="text-xs text-muted-foreground">{strings.countryNote}</p>
+
+          {auditNote ? (
+            <p className="text-xs text-muted-foreground/90" role="status">
+              {auditNote}
+            </p>
+          ) : null}
 
           <Button type="submit" className="w-full rounded-xl" disabled={saving}>
             {saving ? strings.saving : strings.save}
