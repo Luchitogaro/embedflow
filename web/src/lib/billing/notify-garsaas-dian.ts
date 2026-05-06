@@ -2,6 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import { wompiPlanPeriodDays } from "@/lib/billing-config"
 import { nextGarsaasRetryDelayMs } from "@/lib/billing/garsaas-retry-schedule"
 import { embedOrgBillingProfileSnapshotForGarsaas } from "@/lib/billing/org-billing-profile-snapshot"
+import {
+  sendBillingOpsWebhookAlert,
+  shouldSendBillingOpsAlert,
+} from "@/lib/billing/ops-webhook-alert"
 
 /** Emisor acordado — validar NIT/DV con contador antes de producción fiscal plena. */
 const DEFAULT_ISSUER = {
@@ -209,6 +213,19 @@ export async function persistGarsaasNotifyOutcome(
           updated_at: new Date().toISOString(),
         })
         .eq("reference", reference)
+
+      if (shouldSendBillingOpsAlert(attempts)) {
+        void sendBillingOpsWebhookAlert({
+          event: "garsaas_notify_failed",
+          source_app: "embedflow",
+          reference,
+          attempts,
+          error: errShort,
+          http_status: outcome.httpStatus,
+          next_retry_at: nextAt,
+          emitted_at: new Date().toISOString(),
+        })
+      }
       return
     }
 

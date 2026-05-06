@@ -65,6 +65,15 @@ export async function GET(req: Request) {
     processed++
   }
 
+  console.info(
+    "[cron] garsaas-billing-sync",
+    JSON.stringify({
+      scanned: rows?.length ?? 0,
+      due: due.length,
+      processed,
+    })
+  )
+
   return NextResponse.json({
     ok: true,
     scanned: rows?.length ?? 0,

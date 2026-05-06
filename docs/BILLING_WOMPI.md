@@ -61,6 +61,8 @@ WOMPI_WEBHOOK_EMBEDFLOW_URL=https://<tu-app>/api/webhooks/wompi
 
 El panel Wompi debe apuntar solo a `https://garsaas.io/api/webhooks/wompi` (o el dominio público del landing).
 
+**Operación y cron:** ver `docs/BILLING_OPERATIONS.md` (variables, job de reintentos, alertas webhook opcionales).
+
 ## Flujo en la app
 
 1. Usuario owner/admin en **Ajustes → Facturación** elige un plan de pago y pulsa upgrade (mismo `CheckoutButton` que Stripe).
