@@ -203,17 +203,29 @@ export function BillingInvoiceHistory({
       <CardContent className="pt-6">
         {!showGlobalEmpty ? (
           <Tabs value={filter} onValueChange={(v) => setFilter(v as InvoiceFilter)} className="w-full">
-            <TabsList className="mb-3 h-auto w-full flex-wrap justify-start gap-1 rounded-xl p-1 sm:inline-flex">
-              <TabsTrigger value="all" className="rounded-lg px-2.5 text-xs sm:text-sm">
+            <TabsList className="mb-3 grid h-auto w-full grid-cols-2 gap-1.5 rounded-xl p-1 sm:flex sm:flex-wrap sm:justify-start">
+              <TabsTrigger
+                value="all"
+                className="min-h-10 whitespace-normal rounded-lg px-2 py-2 text-center text-[11px] leading-snug sm:min-h-9 sm:px-2.5 sm:text-sm"
+              >
                 {interpolate(strings.filterAll, { count: counts.all })}
               </TabsTrigger>
-              <TabsTrigger value="pending" className="rounded-lg px-2.5 text-xs sm:text-sm">
+              <TabsTrigger
+                value="pending"
+                className="min-h-10 whitespace-normal rounded-lg px-2 py-2 text-center text-[11px] leading-snug sm:min-h-9 sm:px-2.5 sm:text-sm"
+              >
                 {interpolate(strings.filterPending, { count: counts.pending })}
               </TabsTrigger>
-              <TabsTrigger value="error" className="rounded-lg px-2.5 text-xs sm:text-sm">
+              <TabsTrigger
+                value="error"
+                className="min-h-10 whitespace-normal rounded-lg px-2 py-2 text-center text-[11px] leading-snug sm:min-h-9 sm:px-2.5 sm:text-sm"
+              >
                 {interpolate(strings.filterError, { count: counts.error })}
               </TabsTrigger>
-              <TabsTrigger value="synced" className="rounded-lg px-2.5 text-xs sm:text-sm">
+              <TabsTrigger
+                value="synced"
+                className="min-h-10 whitespace-normal rounded-lg px-2 py-2 text-center text-[11px] leading-snug sm:min-h-9 sm:px-2.5 sm:text-sm"
+              >
                 {interpolate(strings.filterSynced, { count: counts.synced })}
               </TabsTrigger>
             </TabsList>
@@ -238,8 +250,8 @@ export function BillingInvoiceHistory({
                 const planLabel = planLabels[row.targetPlan] ?? row.targetPlan
                 return (
                   <li key={row.id} className="rounded-xl border border-border p-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-medium text-foreground">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                      <p className="min-w-0 flex-1 text-sm font-medium leading-snug text-foreground">
                         {interpolate(strings.lineAmountPlan, {
                           amount: formatMoney(locale, row.amountInCents, row.currency),
                           plan: planLabel,
@@ -247,7 +259,7 @@ export function BillingInvoiceHistory({
                       </p>
                       <span
                         className={cn(
-                          "inline-flex shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium",
+                          "inline-flex max-w-full self-start rounded-full border px-2 py-1 text-[11px] font-medium leading-snug sm:shrink-0 sm:self-auto sm:py-0.5 sm:text-[11px]",
                           status.badgeClassName
                         )}
                       >
