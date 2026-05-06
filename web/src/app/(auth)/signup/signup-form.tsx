@@ -9,6 +9,7 @@ import type { Locale } from "@/lib/i18n/config"
 import { garsaasProductPricingUrl } from "@/lib/garsaas-marketing"
 import { interpolate } from "@/lib/i18n/interpolate"
 import { AI_PROCESSING_CONSENT_VERSION } from "@/lib/ai-processing-consent"
+import { submitEmbedflowSignupLead } from "./actions"
 
 type AuthCopy = Messages["auth"]
 type ConsentCopy = Messages["aiProcessingConsent"]
@@ -53,6 +54,10 @@ export function SignupForm({ t, consent, locale }: { t: AuthCopy; consent: Conse
       setError(error.message)
     } else {
       setMagicSent(true)
+      void submitEmbedflowSignupLead({
+        email,
+        displayName: name.trim() || undefined,
+      })
     }
   }
 
@@ -81,6 +86,10 @@ export function SignupForm({ t, consent, locale }: { t: AuthCopy; consent: Conse
       setError(error.message)
     } else {
       setMagicSent(true)
+      void submitEmbedflowSignupLead({
+        email,
+        displayName: name.trim() || undefined,
+      })
     }
   }
 

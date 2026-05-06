@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [0.2.2] - 2026-05-06
+
+### Added
+
+- **Lead GarSaaS (opcional)** — server action tras signup con contraseña o envío de magic link; `GARSAAS_LEADS_URL` + `GARSAAS_INTERNAL_LEADS_SECRET` (solo servidor). Ver repo GarSaaS `docs/sql/product_signups.sql`.
+
+---
+
 ## [0.2.1] - 2026-05-06
 
 ### Added
