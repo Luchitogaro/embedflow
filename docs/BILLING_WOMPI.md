@@ -19,11 +19,12 @@ Tras añadir `NEXT_PUBLIC_*`, haz **redeploy con build** para que la variable qu
 
 ## Supabase
 
-Aplicar migraciones **`013_wompi_billing.sql`**, **`014_garsaas_billing_sync.sql`**, **`015_payment_intents_org_admin_select.sql`** (y posteriores en `supabase/migrations/`):
+Aplicar migraciones **`013_wompi_billing.sql`**, **`014_garsaas_billing_sync.sql`**, **`015_payment_intents_org_admin_select.sql`**, **`016_org_billing_profile.sql`** (y posteriores en `supabase/migrations/`):
 
 - Tablas `subscription_plan_catalog` y `payment_intents`.
 - Extiende `organizations.billing_provider` con el valor **`wompi`**.
 - RLS en `payment_intents`: el **service role** sigue siendo quien inserta/actualiza desde webhooks y checkout; la migración **`015`** permite **SELECT** a usuarios **authenticated** que son **owner** o **admin** de la organización (historial en **Ajustes → Facturación**).
+- Migración **`016`**: columnas de **perfil fiscal** en `organizations` (MVP DIAN). Owner/admin los editan en **Ajustes → Facturación**; sin datos completos no se puede iniciar checkout **Wompi**; el snapshot en notify GarSaaS incluye `profile_complete`.
 
 Precios iniciales en COP (`amount_in_cents` = pesos × 100). Ajusta con `UPDATE` en SQL o edita el `INSERT` en una migración nueva y aplícala en cada entorno.
 

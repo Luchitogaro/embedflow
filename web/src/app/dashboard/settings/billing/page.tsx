@@ -20,6 +20,8 @@ import {
 import { getBillingProvider } from "@/lib/billing-config"
 import { interpolate } from "@/lib/i18n/interpolate"
 import { cn } from "@/lib/utils"
+import { isEmbedOrgBillingProfileComplete } from "@/lib/billing/org-billing-profile-snapshot"
+import { BillingInvoiceProfileForm } from "./billing-invoice-profile-form"
 
 const BILLING_INVOICE_HISTORY_LIMIT = 100
 
@@ -60,16 +62,49 @@ export default async function BillingPage() {
   let currentPlan: Plan = devPlanOverride() ?? "free"
   let stripeCustomerId: string | null = null
   let planExpiresAt: string | null = null
+  let billingProfileComplete = false
+  type OrgRowDb = {
+    plan: string | null
+    stripe_customer_id: string | null
+    plan_expires_at: string | null
+    name: string
+    billing_tax_id_type: string | null
+    billing_tax_id: string | null
+    billing_legal_name: string | null
+    billing_invoice_email: string | null
+    billing_phone: string | null
+    billing_country: string | null
+    billing_address_line: string | null
+  }
+  let orgRow: OrgRowDb | null = null
+
   if (userRow?.org_id) {
     const { data: org } = await supabase
       .from("organizations")
-      .select("plan, stripe_customer_id, plan_expires_at")
+      .select(
+        "plan, stripe_customer_id, plan_expires_at, name, billing_tax_id_type, billing_tax_id, billing_legal_name, billing_invoice_email, billing_phone, billing_country, billing_address_line"
+      )
       .eq("id", userRow.org_id)
       .single()
-    storedPlan = effectiveOrgPlanFromDatabase(org?.plan, org?.plan_expires_at)
-    currentPlan = effectiveOrgPlan(org?.plan, org?.plan_expires_at)
-    stripeCustomerId = org?.stripe_customer_id ?? null
-    planExpiresAt = org?.plan_expires_at ?? null
+
+    const o = org as unknown as OrgRowDb | null
+    if (o) {
+      orgRow = o
+      storedPlan = effectiveOrgPlanFromDatabase(o.plan, o.plan_expires_at)
+      currentPlan = effectiveOrgPlan(o.plan, o.plan_expires_at)
+      stripeCustomerId = o.stripe_customer_id ?? null
+      planExpiresAt = o.plan_expires_at ?? null
+      billingProfileComplete = isEmbedOrgBillingProfileComplete({
+        name: o.name ?? "",
+        billing_tax_id_type: o.billing_tax_id_type,
+        billing_tax_id: o.billing_tax_id,
+        billing_legal_name: o.billing_legal_name,
+        billing_invoice_email: o.billing_invoice_email,
+        billing_phone: o.billing_phone,
+        billing_country: o.billing_country,
+        billing_address_line: o.billing_address_line,
+      })
+    }
   }
 
   const planOverrideOn = isActiveDevPlanOverride()
@@ -220,6 +255,21 @@ export default async function BillingPage() {
         <p className="text-xs font-medium text-muted-foreground mb-3 sm:mb-4">{b.comingSoonPlansNote}</p>
       ) : null}
 
+      {canManageBilling && userRow?.org_id && orgRow && !billingComingSoon ? (
+        <BillingInvoiceProfileForm
+          strings={b.invoiceProfile}
+          initial={{
+            billingTaxIdType: orgRow.billing_tax_id_type,
+            billingTaxId: orgRow.billing_tax_id,
+            billingLegalName: orgRow.billing_legal_name,
+            billingInvoiceEmail: orgRow.billing_invoice_email,
+            billingPhone: orgRow.billing_phone,
+            billingCountry: orgRow.billing_country?.trim() || "CO",
+            billingAddressLine: orgRow.billing_address_line,
+          }}
+        />
+      ) : null}
+
       <div className="relative mb-10">
         {billingComingSoon ? (
           <div
@@ -303,13 +353,22 @@ export default async function BillingPage() {
                     if (showCheckout) {
                       const checkoutLabel =
                         checkoutIntent === "switch_paid_plan" ? b.changePaidPlan : b.upgrade
+                      const wompiBlocksPaid =
+                        billingProvider === "wompi" && !billingProfileComplete
                       return (
-                        <CheckoutButton
-                          plan={plan.id as "starter" | "pro" | "team"}
-                          disabled={!canManageBilling}
-                          label={checkoutLabel}
-                          strings={checkoutStrings}
-                        />
+                        <>
+                          {wompiBlocksPaid ? (
+                            <p className="text-xs text-amber-800 dark:text-amber-200/90 mt-auto text-center leading-snug mb-2">
+                              {b.invoiceProfile.requiredForCheckout}
+                            </p>
+                          ) : null}
+                          <CheckoutButton
+                            plan={plan.id as "starter" | "pro" | "team"}
+                            disabled={!canManageBilling || wompiBlocksPaid}
+                            label={checkoutLabel}
+                            strings={checkoutStrings}
+                          />
+                        </>
                       )
                     }
                     if (disabledReason) {

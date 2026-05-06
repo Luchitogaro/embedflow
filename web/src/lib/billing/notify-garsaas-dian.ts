@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { wompiPlanPeriodDays } from "@/lib/billing-config"
 import { nextGarsaasRetryDelayMs } from "@/lib/billing/garsaas-retry-schedule"
+import { embedOrgBillingProfileSnapshotForGarsaas } from "@/lib/billing/org-billing-profile-snapshot"
 
 /** Emisor acordado — validar NIT/DV con contador antes de producción fiscal plena. */
 const DEFAULT_ISSUER = {
@@ -53,7 +54,13 @@ export async function notifyGarsaasDianBilling(
     return { kind: "intent_not_found" }
   }
 
-  const { data: org } = await admin.from("organizations").select("name").eq("id", intent.org_id).maybeSingle()
+  const { data: org } = await admin
+    .from("organizations")
+    .select(
+      "name, billing_tax_id_type, billing_tax_id, billing_legal_name, billing_invoice_email, billing_phone, billing_country, billing_address_line"
+    )
+    .eq("id", intent.org_id)
+    .maybeSingle()
 
   const periodStart = new Date()
   const periodEnd = new Date(periodStart)
@@ -83,10 +90,16 @@ export async function notifyGarsaasDianBilling(
     },
     buyer_org: {
       external_id: intent.org_id as string,
-      billing_profile_snapshot: {
-        organization_name: org?.name ?? null,
-        note: "Completar datos tributarios del adquiriente en la app antes de emisión DIAN final.",
-      },
+      billing_profile_snapshot: embedOrgBillingProfileSnapshotForGarsaas({
+        name: org?.name ?? "",
+        billing_tax_id_type: org?.billing_tax_id_type ?? null,
+        billing_tax_id: org?.billing_tax_id ?? null,
+        billing_legal_name: org?.billing_legal_name ?? null,
+        billing_invoice_email: org?.billing_invoice_email ?? null,
+        billing_phone: org?.billing_phone ?? null,
+        billing_country: org?.billing_country ?? null,
+        billing_address_line: org?.billing_address_line ?? null,
+      }),
     },
   }
 

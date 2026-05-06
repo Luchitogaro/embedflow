@@ -8,6 +8,7 @@ import { getBillingProvider } from "@/lib/billing-config"
 import { createCheckoutPreference } from "@/lib/mercadopago-client"
 import { createServiceRoleClient } from "@/lib/supabase/admin"
 import { createEmbedflowWompiCheckout } from "@/lib/billing/wompi-checkout"
+import { isEmbedOrgBillingProfileComplete } from "@/lib/billing/org-billing-profile-snapshot"
 
 export async function POST(req: NextRequest) {
   const provider = getBillingProvider()
@@ -53,7 +54,9 @@ export async function POST(req: NextRequest) {
 
   const { data: org } = await supabase
     .from("organizations")
-    .select("id, stripe_customer_id")
+    .select(
+      "id, stripe_customer_id, name, billing_tax_id_type, billing_tax_id, billing_legal_name, billing_invoice_email, billing_phone, billing_country, billing_address_line"
+    )
     .eq("id", profile.org_id)
     .single()
 
@@ -64,13 +67,47 @@ export async function POST(req: NextRequest) {
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin).replace(/\/$/, "")
 
   if (provider === "wompi") {
+    const orgBilling = org as typeof org & {
+      name: string
+      billing_tax_id_type: string | null
+      billing_tax_id: string | null
+      billing_legal_name: string | null
+      billing_invoice_email: string | null
+      billing_phone: string | null
+      billing_country: string | null
+      billing_address_line: string | null
+    }
+    if (
+      !isEmbedOrgBillingProfileComplete({
+        name: orgBilling.name ?? "",
+        billing_tax_id_type: orgBilling.billing_tax_id_type,
+        billing_tax_id: orgBilling.billing_tax_id,
+        billing_legal_name: orgBilling.billing_legal_name,
+        billing_invoice_email: orgBilling.billing_invoice_email,
+        billing_phone: orgBilling.billing_phone,
+        billing_country: orgBilling.billing_country,
+        billing_address_line: orgBilling.billing_address_line,
+      })
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Completa los datos de factura electrónica en Facturación antes de pagar con Wompi.",
+        },
+        { status: 400 }
+      )
+    }
+
+    const payerEmail =
+      orgBilling.billing_invoice_email?.trim().toLowerCase() || user.email
+
     try {
       const admin = createServiceRoleClient()
       const result = await createEmbedflowWompiCheckout(admin, {
         orgId: org.id,
         plan,
         appUrl,
-        customerEmail: user.email,
+        customerEmail: payerEmail,
       })
       if (!result.ok) {
         return NextResponse.json({ error: result.error }, { status: 400 })
