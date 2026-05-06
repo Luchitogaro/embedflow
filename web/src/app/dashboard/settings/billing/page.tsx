@@ -10,6 +10,7 @@ import { countMonthlyQuotaDocuments, getEffectiveMonthlyDocLimit, isDevQuotaBypa
 import { CheckoutButton, PortalButton } from "./billing-actions"
 import { planCheckoutState } from "./plan-checkout-state"
 import { getMessagesForRequest } from "@/lib/i18n/server"
+import { BillingInvoiceHistory, type EmbedBillingInvoiceRow } from "./billing-invoice-history"
 import {
   devPlanOverride,
   effectiveOrgPlan,
@@ -20,8 +21,25 @@ import { getBillingProvider } from "@/lib/billing-config"
 import { interpolate } from "@/lib/i18n/interpolate"
 import { cn } from "@/lib/utils"
 
+const BILLING_INVOICE_HISTORY_LIMIT = 100
+
+/** Fila `payment_intents` para historial (tipado explícito: el cliente Supabase sin schema puede inferir `GenericStringError`). */
+type DbPaymentIntentHistoryRow = {
+  id: string
+  reference: string | null
+  target_plan: string | null
+  amount_in_cents: number | string | null
+  currency: string | null
+  updated_at: string
+  wompi_transaction_id: string | null
+  garsaas_invoice_id: string | number | null
+  garsaas_notify_last_error: string | null
+  garsaas_notify_next_at: string | null
+  garsaas_no_upstream: boolean | null
+}
+
 export default async function BillingPage() {
-  const { messages } = await getMessagesForRequest()
+  const { locale, messages } = await getMessagesForRequest()
   const b = messages.billing
 
   const supabase = await createClient()
@@ -88,6 +106,61 @@ export default async function BillingPage() {
 
   /** Unset or anything except the literal `"false"` → “coming soon” billing (demo-friendly). */
   const billingComingSoon = process.env.EMBEDFLOW_BILLING_COMING_SOON !== "false"
+
+  let wompiInvoiceRows: EmbedBillingInvoiceRow[] = []
+  const planLabelById = Object.fromEntries(
+    b.plansList.filter((p) => p.id !== "free").map((p) => [p.id, p.name])
+  ) as Record<string, string>
+
+  if (
+    billingProvider === "wompi" &&
+    canManageBilling &&
+    userRow?.org_id &&
+    !billingComingSoon
+  ) {
+    const { data: intentRows, error: intentsErr } = await supabase
+      .from("payment_intents")
+      .select(
+        [
+          "id",
+          "reference",
+          "target_plan",
+          "amount_in_cents",
+          "currency",
+          "updated_at",
+          "wompi_transaction_id",
+          "garsaas_invoice_id",
+          "garsaas_notify_last_error",
+          "garsaas_notify_next_at",
+          "garsaas_no_upstream",
+        ].join(", ")
+      )
+      .eq("org_id", userRow.org_id)
+      .eq("status", "APPROVED")
+      .order("updated_at", { ascending: false })
+      .limit(BILLING_INVOICE_HISTORY_LIMIT)
+
+    if (intentsErr) {
+      console.warn("[billing] payment_intents history:", intentsErr.message)
+    } else if (Array.isArray(intentRows) && intentRows.length > 0) {
+      const rows = intentRows as unknown as DbPaymentIntentHistoryRow[]
+      wompiInvoiceRows = rows.map((r) => ({
+        id: String(r.id),
+        reference: String(r.reference ?? ""),
+        targetPlan: r.target_plan as EmbedBillingInvoiceRow["targetPlan"],
+        amountInCents: Number(r.amount_in_cents),
+        currency: String(r.currency ?? "COP"),
+        updatedAtIso: new Date(r.updated_at).toISOString(),
+        wompiTransactionId: r.wompi_transaction_id ?? null,
+        garsaasInvoiceId: r.garsaas_invoice_id != null ? String(r.garsaas_invoice_id) : null,
+        garsaasNotifyLastError: r.garsaas_notify_last_error ?? null,
+        garsaasNotifyNextAtIso: r.garsaas_notify_next_at
+          ? new Date(r.garsaas_notify_next_at).toISOString()
+          : null,
+        garsaasNoUpstream: Boolean(r.garsaas_no_upstream),
+      }))
+    }
+  }
 
   return (
     <div className="p-6 sm:p-8 max-w-6xl mx-auto">
@@ -293,6 +366,16 @@ export default async function BillingPage() {
           ) : null}
         </CardContent>
       </Card>
+
+      {billingProvider === "wompi" && canManageBilling && userRow?.org_id && !billingComingSoon ? (
+        <BillingInvoiceHistory
+          locale={locale}
+          strings={b.invoiceHistory}
+          planLabels={planLabelById}
+          rows={wompiInvoiceRows}
+          historyLimit={BILLING_INVOICE_HISTORY_LIMIT}
+        />
+      ) : null}
     </div>
   )
 }

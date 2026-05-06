@@ -19,11 +19,11 @@ Tras añadir `NEXT_PUBLIC_*`, haz **redeploy con build** para que la variable qu
 
 ## Supabase
 
-Aplicar migraciones **`013_wompi_billing.sql`** y **`014_garsaas_billing_sync.sql`** (y posteriores en `supabase/migrations/`):
+Aplicar migraciones **`013_wompi_billing.sql`**, **`014_garsaas_billing_sync.sql`**, **`015_payment_intents_org_admin_select.sql`** (y posteriores en `supabase/migrations/`):
 
 - Tablas `subscription_plan_catalog` y `payment_intents`.
 - Extiende `organizations.billing_provider` con el valor **`wompi`**.
-- RLS activado en las nuevas tablas (solo el **service role** del backend debe acceder).
+- RLS en `payment_intents`: el **service role** sigue siendo quien inserta/actualiza desde webhooks y checkout; la migración **`015`** permite **SELECT** a usuarios **authenticated** que son **owner** o **admin** de la organización (historial en **Ajustes → Facturación**).
 
 Precios iniciales en COP (`amount_in_cents` = pesos × 100). Ajusta con `UPDATE` en SQL o edita el `INSERT` en una migración nueva y aplícala en cada entorno.
 
@@ -66,6 +66,7 @@ El panel Wompi debe apuntar solo a `https://garsaas.io/api/webhooks/wompi` (o el
 2. `POST /api/billing/checkout` crea fila en `payment_intents` y devuelve `url` del checkout Web Wompi.
 3. Tras pagar, redirección a `/dashboard/settings/billing?billing=success`.
 4. Wompi envía el evento al router → EmbedFlow `/api/webhooks/wompi` → actualiza `organizations` (`plan`, `billing_provider`, `plan_expires_at`) y marca el intent **APPROVED**.
+5. En facturación Wompi, owner/admin ve **Facturas y cobros** (hasta 100 intents **APPROVED**): filtros por estado GarSaaS y paginación.
 
 La fuente de verdad del plan pagado es el **webhook**, no solo la redirección.
 
